@@ -12,18 +12,18 @@ services:
       - backend
     restart: unless-stopped
 
-backend:
-    build: 
-      context: ./backend # Le dice a Docker dónde está el Dockerfile
-    
+  backend:
+    build:
+      context: ./first-pos-backend # Le dice a Docker dónde está el Dockerfile
+
     # EL TRUCO DE SENIOR: Mapeamos tu carpeta local hacia el /app del contenedor.
     # Así, cuando modifiques main.py en tu laptop, el contenedor verá el cambio al instante.
     volumes:
-      - ./backend:/app
-    
+      - ./first-pos-backend:/app
+
     # Sobrescribimos el comando del Dockerfile para encender el "reload" automático
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    
+
     environment:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/first_pos
     networks:
