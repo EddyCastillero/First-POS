@@ -466,3 +466,11 @@ def get_low_stock_alerts(db: Session) -> List[LowStockAlertResponse]:
         ))
 
     return alerts
+
+
+def get_recipes(db: Session, recipe_type: Optional[RecipeType] = None) -> List[Recipe]:
+    """Obtiene la lista de recetas o subrecetas."""
+    query = db.query(Recipe).filter(Recipe.is_active == True)
+    if recipe_type:
+        query = query.filter(Recipe.recipe_type == recipe_type)
+    return query.order_by(Recipe.name.asc()).all()

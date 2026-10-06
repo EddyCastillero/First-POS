@@ -12,6 +12,15 @@ from models.inventory import (
     WasteLog,
     ProductionLog,
 )
+from models.pos import (
+    PaymentMethod,
+    OrderStatus,
+    ShiftStatus,
+    CashCut,
+    MenuItem,
+    Order,
+    OrderItem,
+)
 
 __all__ = [
     "Product",
@@ -26,4 +35,11 @@ __all__ = [
     "StockMovement",
     "WasteLog",
     "ProductionLog",
+    "PaymentMethod",
+    "OrderStatus",
+    "ShiftStatus",
+    "CashCut",
+    "MenuItem",
+    "Order",
+    "OrderItem",
 ]

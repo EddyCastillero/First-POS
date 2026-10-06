@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routers.inventory import router as inventory_router
+from routers.pos import router as pos_router
 
 app = FastAPI(
     title="First-POS API",
@@ -7,8 +8,9 @@ app = FastAPI(
     description="API profesional de Punto de Venta e Inventario para Restaurante / Comedor.",
 )
 
-# Conectar el router de inventario
+# Conectar routers modulares
 app.include_router(inventory_router)
+app.include_router(pos_router)
 
 
 @app.get("/")

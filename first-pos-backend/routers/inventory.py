@@ -141,6 +141,19 @@ def create_recipe_endpoint(
     return service.create_recipe(db, data)
 
 
+@router.get(
+    "/recipes",
+    response_model=List[schemas.RecipeResponse],
+    summary="Listar recetas y subrecetas",
+)
+def list_recipes_endpoint(
+    recipe_type: Optional[schemas.RecipeType] = None,
+    db: Session = Depends(get_db)
+):
+    """Lista las recetas activas del sistema."""
+    return service.get_recipes(db, recipe_type=recipe_type)
+
+
 @router.post(
     "/subrecipes/produce",
     response_model=schemas.ProductionLogResponse,
