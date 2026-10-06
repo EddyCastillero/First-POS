@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First-POS — Sistema de Punto de Venta e Inventario</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOPBAR -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">🍔</span>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">First-POS</h1>
+          <p class="text-xs text-slate-400">Restaurante & Comedor</p>
+        </div>
+      </div>
+
+      <!-- STATUS BADGE DEL TURNO -->
+      <div id="shift-badge-container" class="flex items-center space-x-3">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN -->
+    <div class="bg-slate-800 border-t border-slate-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 py-2">
+        <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-blue-600 text-white">
+          💳 Caja (POS)
+        </button>
+        <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+          📦 Inventario
+        </button>
+        <button onclick="switchTab('waste')" id="tab-btn-waste" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+          🥑 Mermas (Cocina)
+        </button>
+        <button onclick="switchTab('production')" id="tab-btn-production" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+          🍲 Mise en Place
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- NOTIFICACIONES TOAST -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-50 max-w-md px-5 py-4 rounded-xl shadow-2xl transition transform ease-out duration-300"></div>
+
+    <!-- ============================================================== -->
+    <!-- 1. TAB: PUNTO DE VENTA (CAJA) -->
+    <!-- ============================================================== -->
+    <section id="tab-pos" class="tab-content">
+      
+      <!-- SI LA CAJA ESTÁ CERRADA: MODAL DE APERTURA OBLIGATORIA -->
+      <div id="shift-closed-banner" class="hidden bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-xl mx-auto text-center mt-6">
+        <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+          🔒
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Caja Registradora Cerrada</h2>
+        <p class="text-slate-600 text-sm mb-6">Para empezar a cobrar órdenes, debes realizar la apertura del turno con un fondo de caja fijo.</p>
+        
+        <form onsubmit="handleOpenShift(event)" class="text-left space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del Cajero:</label>
+            <input type="text" id="open-cashier-name" required placeholder="Ej. Leonel" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Selecciona Fondo Fijo para Cambio:</label>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="border-2 border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                <input type="radio" name="open-initial-cash" value="1000" class="sr-only" checked>
+                <span class="block text-xs font-semibold text-slate-500">Básico</span>
+                <span class="text-lg font-bold text-slate-900">$1,000</span>
+              </label>
+              <label class="border-2 border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                <input type="radio" name="open-initial-cash" value="2000" class="sr-only">
+                <span class="block text-xs font-semibold text-slate-500">Estándar</span>
+                <span class="text-lg font-bold text-slate-900">$2,000</span>
+              </label>
+              <label class="border-2 border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                <input type="radio" name="open-initial-cash" value="3000" class="sr-only">
+                <span class="block text-xs font-semibold text-slate-500">Alto Flujo</span>
+                <span class="text-lg font-bold text-slate-900">$3,000</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow transition">
+            🔓 Abrir Turno de Caja
+          </button>
+        </form>
+      </div>
+
+      <!-- SI LA CAJA ESTÁ ABIERTA: VISTA PRINCIPAL DEL POS -->
+      <div id="pos-interface" class="hidden">
+        
+        <!-- RESUMEN DEL TURNO ACTIVO -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center space-x-6">
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Cajero en Turno</span>
+              <p id="pos-shift-cashier" class="font-bold text-slate-900 text-base">-</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Fondo Inicial</span>
+              <p id="pos-shift-initial" class="font-bold text-slate-900 text-base">$0.00</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Ventas Efectivo</span>
+              <p id="pos-shift-cash" class="font-bold text-emerald-600 text-base">$0.00</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Efectivo en Cajón</span>
+              <p id="pos-shift-expected" class="font-bold text-blue-600 text-base">$0.00</p>
+            </div>
+          </div>
+          <button onclick="openCloseShiftModal()" class="px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-sm font-semibold transition">
+            🔒 Cerrar Turno (Arqueo)
+          </button>
+        </div>
+
+        <!-- LAYOUT DE 2 COLUMNAS: MENÚ Y CARRITO -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- COLUMNA IZQUIERDA: MENÚ DE PLATILLOS -->
+          <div class="lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-slate-900">Menú de Platillos</h2>
+              <span class="text-xs text-slate-500">Selecciona para agregar a la orden</span>
+            </div>
+            
+            <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <!-- Renderizado de items -->
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: TICKET DE VENTA Y COBRO -->
+          <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sticky top-24">
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-slate-900 text-base">Ticket de Orden</h3>
+                <button onclick="clearCart()" class="text-xs text-slate-400 hover:text-rose-600">Vaciar</button>
+              </div>
+
+              <!-- LISTA DE PRODUCTOS EN EL TICKET -->
+              <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto mb-4">
+                <p class="text-xs text-slate-400 text-center py-6">El ticket está vacío. Agrega platillos del menú.</p>
+              </div>
+
+              <!-- DESGLOSE TOTAL -->
+              <div class="border-t border-slate-100 pt-3 space-y-2 mb-4">
+                <div class="flex justify-between text-base font-bold text-slate-900 pt-1 border-t">
+                  <span>Total:</span>
+                  <span id="cart-total">$0.00</span>
+                </div>
+              </div>
+
+              <!-- MÉTODO DE PAGO -->
+              <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Método de Pago:</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" onclick="setPaymentMethod('CASH')" id="pay-btn-cash" class="py-2 rounded-lg text-sm font-semibold border-2 border-blue-600 bg-blue-50 text-blue-700">
+                    💵 Efectivo
+                  </button>
+                  <button type="button" onclick="setPaymentMethod('CARD')" id="pay-btn-card" class="py-2 rounded-lg text-sm font-semibold border-2 border-slate-200 text-slate-600 hover:border-slate-300">
+                    💳 Tarjeta
+                  </button>
+                </div>
+              </div>
+
+              <!-- EFECTIVO RECIBIDO Y CAMBIO (Solo si es efectivo) -->
+              <div id="cash-payment-fields" class="space-y-2 mb-5">
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Efectivo Entregado:</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">$</span>
+                    <input type="number" step="0.50" id="cash-given-input" oninput="calculateChange()" placeholder="0.00" class="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-800">
+                  </div>
+                </div>
+                <div class="flex justify-between items-center text-sm bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span class="text-slate-600 font-medium">Cambio a Devolver:</span>
+                  <span id="change-display" class="font-bold text-emerald-600 text-base">$0.00</span>
+                </div>
+              </div>
+
+              <!-- BOTÓN DE COBRO -->
+              <button onclick="handleCheckout()" id="btn-checkout" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                ✅ Cobrar Orden
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 2. TAB: INVENTARIO -->
+    <!-- ============================================================== -->
+    <section id="tab-inventory" class="tab-content hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Almacén de Insumos</h2>
+          <p class="text-sm text-slate-500">Control de materias primas, unidades y stock en bodega</p>
+        </div>
+        <div class="flex space-x-3">
+          <button onclick="openNewIngredientModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+            + Nuevo Insumo
+          </button>
+          <button onclick="openStockEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+            📥 Entrada de Stock
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLA DE INSUMOS -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+              <tr>
+                <th class="px-6 py-3.5">Insumo</th>
+                <th class="px-6 py-3.5">Categoría</th>
+                <th class="px-6 py-3.5">Stock Actual</th>
+                <th class="px-6 py-3.5">Stock Mínimo</th>
+                <th class="px-6 py-3.5">Costo Unitario</th>
+                <th class="px-6 py-3.5">Merma Est.</th>
+                <th class="px-6 py-3.5">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body" class="divide-y divide-slate-100">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 3. TAB: MERMAS (OPERACIÓN DE COCINA) -->
+    <!-- ============================================================== -->
+    <section id="tab-waste" class="tab-content hidden">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-900">Registro de Mermas y Desperdicios</h2>
+        <p class="text-sm text-slate-500">Aplica la regla de Peso Bruto vs Peso Neto para procesos de preparación y descongelación.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- CARD: MERMA POR PROCESO (REGLA BRUTO/NETO) -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex items-center space-x-3 mb-4 pb-3 border-b">
+            <span class="text-2xl">🔪</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Merma por Proceso (Limpieza / Preparación)</h3>
+              <p class="text-xs text-slate-500">El sistema calcula automáticamente la merma y actualiza el stock.</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleProcessWaste(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Insumo a procesar:</label>
+              <select id="waste-process-ing" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                <!-- Insumos -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Peso Bruto (Almacén):</label>
+                <input type="number" step="0.001" id="waste-gross-qty" required oninput="updateProcessWastePreview()" placeholder="Ej. 2000" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Peso Neto (Limpio):</label>
+                <input type="number" step="0.001" id="waste-net-qty" required oninput="updateProcessWastePreview()" placeholder="Ej. 1400" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+              </div>
+            </div>
+
+            <!-- CÁLCULO EN VIVO -->
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex justify-between items-center text-xs">
+              <div>
+                <span class="text-blue-600 font-semibold">Merma Calculada:</span>
+                <p id="calc-waste-qty" class="text-sm font-bold text-blue-900">0.000</p>
+              </div>
+              <div>
+                <span class="text-blue-600 font-semibold">% Rendimiento Perdido:</span>
+                <p id="calc-waste-pct" class="text-sm font-bold text-blue-900">0.00%</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo / Tarea:</label>
+              <input type="text" id="waste-process-reason" placeholder="Ej. Hueso y cáscara de aguacate para guacamole" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cocinero responsable:</label>
+              <input type="text" id="waste-process-cook" placeholder="Ej. Chef Alex" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm transition">
+              Registrar Merma de Proceso
+            </button>
+          </form>
+        </div>
+
+        <!-- CARD: MERMA DIRECTA -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex items-center space-x-3 mb-4 pb-3 border-b">
+            <span class="text-2xl">🗑️</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Merma Directa (Incidentes / Caducidad)</h3>
+              <p class="text-xs text-slate-500">Error humano, producto descompuesto o rechazo.</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleGeneralWaste(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Insumo:</label>
+              <select id="waste-general-ing" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                <!-- Insumos -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Merma:</label>
+              <select id="waste-general-type" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                <option value="error_humano">Error Humano (se cayó / quemó)</option>
+                <option value="vida_util">Vida Útil (caducidad en frío)</option>
+                <option value="falta_calidad">Falta de Calidad (dañado de proveedor)</option>
+                <option value="rechazo_cliente">Rechazo de Cliente</option>
+                <option value="natural">Merma Natural</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cantidad Mermada:</label>
+              <input type="number" step="0.001" id="waste-general-qty" required placeholder="Cantidad exacta" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo:</label>
+              <input type="text" id="waste-general-reason" placeholder="Explicación del incidente" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm transition">
+              Registrar Merma Directa
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 4. TAB: MISE EN PLACE (PRODUCCIÓN DE SUBRECETAS) -->
+    <!-- ============================================================== -->
+    <section id="tab-production" class="tab-content hidden">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-900">Producción de Cocina (Mise en Place)</h2>
+        <p class="text-sm text-slate-500">Prepara lotes de subrecetas (salsas, aderezos). Se descuentan insumos crudos y entra el producto preparado.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- FORMULARIO DE PREPARACIÓN -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 lg:col-span-1">
+          <h3 class="font-bold text-slate-900 text-base mb-4 pb-2 border-b">Preparar Lote</h3>
+          
+          <form onsubmit="handleProduceSubrecipe(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Subreceta:</label>
+              <select id="prod-subrecipe-select" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                <!-- Subrecetas -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cantidad a Producir:</label>
+              <input type="number" step="0.001" id="prod-quantity" required placeholder="Ej. 2000" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Notas / Lote:</label>
+              <input type="text" id="prod-notes" placeholder="Ej. Producción para turno matutino" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cocinero:</label>
+              <input type="text" id="prod-cook" placeholder="Ej. Alex" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm transition">
+              🍲 Ejecutar Producción
+            </button>
+          </form>
+        </div>
+
+        <!-- LISTA DE SUBRECETAS Y STOCK EN REFRIGERADOR -->
+        <div class="lg:col-span-2">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-900 text-base mb-4 pb-2 border-b">Subrecetas Disponibles</h3>
+            <div id="subrecipes-list" class="space-y-3">
+              <!-- Renderizado de subrecetas -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- MODALES AUXILIARES -->
+  <!-- ============================================================== -->
+
+  <!-- MODAL: CIERRE DE TURNO / ARQUEO -->
+  <div id="modal-close-shift" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-1">Cierre de Turno y Arqueo Físico</h3>
+      <p class="text-xs text-slate-500 mb-4">Ingresa la cantidad física de dinero que contaste en el cajón.</p>
+
+      <form onsubmit="handleCloseShift(event)" class="space-y-4">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+          <div class="flex justify-between">
+            <span class="text-slate-600">Efectivo esperado por el sistema:</span>
+            <span id="modal-expected-cash" class="font-bold text-slate-900">$0.00</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Efectivo Físico Contado:</label>
+          <input type="number" step="0.50" id="close-actual-cash" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-base font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Notas de Cierre:</label>
+          <input type="text" id="close-notes" placeholder="Sin observaciones" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+        </div>
+
+        <div class="flex space-x-3 pt-2">
+          <button type="button" onclick="closeModal('modal-close-shift')" class="w-1/2 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow">Confirmar Cierre</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO INSUMO -->
+  <div id="modal-new-ingredient" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-3">Dar de Alta Nuevo Insumo</h3>
+      <form onsubmit="handleCreateIngredient(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Nombre:</label>
+          <input type="text" id="new-ing-name" required placeholder="Ej. Queso Gouda" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Categoría:</label>
+            <input type="text" id="new-ing-cat" placeholder="lacteos" class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Unidad Base:</label>
+            <select id="new-ing-unit" class="w-full px-3 py-2 border rounded-lg text-sm">
+              <option value="g">Gramos (g)</option>
+              <option value="ml">Mililitros (ml)</option>
+              <option value="pza">Piezas (pza)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Stock Inicial:</label>
+            <input type="number" step="0.001" id="new-ing-stock" value="0" class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Stock Mínimo:</label>
+            <input type="number" step="0.001" id="new-ing-min" value="0" class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+        </div>
+        <div class="flex space-x-3 pt-3">
+          <button type="button" onclick="closeModal('modal-new-ingredient')" class="w-1/2 py-2 border rounded-lg text-sm">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ENTRADA MANUAL DE STOCK -->
+  <div id="modal-stock-entry" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-3">Entrada Manual de Stock (Compra)</h3>
+      <form onsubmit="handleStockEntry(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Insumo:</label>
+          <select id="entry-ing-select" required class="w-full px-3 py-2 border rounded-lg text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Cantidad que entra:</label>
+          <input type="number" step="0.001" id="entry-qty" required placeholder="Ej. 5000" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Costo Unitario (Opcional):</label>
+          <input type="number" step="0.01" id="entry-cost" placeholder="Costo por unidad base" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Nota / Proveedor:</label>
+          <input type="text" id="entry-note" placeholder="Ej. Compra en Central de Abastos" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+        <div class="flex space-x-3 pt-3">
+          <button type="button" onclick="closeModal('modal-stock-entry')" class="w-1/2 py-2 border rounded-lg text-sm">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold">Cargar Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT DE LA APLICACIÓN -->
+  <script>
+    const API = ''; // Llamadas relativas al mismo origen Nginx
+    let currentShift = null;
+    let menuItems = [];
+    let ingredients = [];
+    let recipes = [];
+    let cart = [];
+    let paymentMethod = 'CASH';
+
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadShift();
+      await loadMenu();
+      await loadInventory();
+      await loadRecipes();
+    });
+
+    // Pestañas
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('text-slate-300', 'hover:bg-slate-700');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700');
+      activeBtn.classList.add('bg-blue-600', 'text-white');
+
+      if (tabId === 'inventory') loadInventory();
+      if (tabId === 'pos') loadMenu();
+      if (tabId === 'production') loadRecipes();
+    }
+
+    // Toasts
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.className = `fixed bottom-6 right-6 z-50 max-w-md px-5 py-4 rounded-xl shadow-2xl text-white font-medium text-sm transition transform flex items-center space-x-3 ${isError ? 'bg-rose-600' : 'bg-emerald-600'}`;
+      toast.innerHTML = `<span>${isError ? '⚠️' : '✅'}</span><span>${msg}</span>`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // ==========================================
+    // 1. GESTIÓN DE TURNOS (CAJA)
+    // ==========================================
+    async function loadShift() {
+      try {
+        const res = await fetch(`${API}/pos/shifts/current`);
+        currentShift = await res.json();
+        renderShiftState();
+      } catch (err) {
+        console.error('Error cargando turno:', err);
+      }
+    }
+
+    function renderShiftState() {
+      const badgeContainer = document.getElementById('shift-badge-container');
+      const closedBanner = document.getElementById('shift-closed-banner');
+      const posInterface = document.getElementById('pos-interface');
+
+      if (currentShift && currentShift.status === 'OPEN') {
+        badgeContainer.innerHTML = `
+          <div class="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1.5 rounded-full text-xs text-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Turno Abierto: <strong>${currentShift.cashier_name}</strong></span>
+          </div>
+        `;
+        closedBanner.classList.add('hidden');
+        posInterface.classList.remove('hidden');
+
+        document.getElementById('pos-shift-cashier').innerText = currentShift.cashier_name;
+        document.getElementById('pos-shift-initial').innerText = `$${parseFloat(currentShift.initial_cash).toFixed(2)}`;
+        document.getElementById('pos-shift-cash').innerText = `$${parseFloat(currentShift.cash_sales_total).toFixed(2)}`;
+        document.getElementById('pos-shift-expected').innerText = `$${parseFloat(currentShift.expected_cash).toFixed(2)}`;
+        document.getElementById('modal-expected-cash').innerText = `$${parseFloat(currentShift.expected_cash).toFixed(2)}`;
+      } else {
+        badgeContainer.innerHTML = `
+          <div class="flex items-center space-x-2 bg-rose-950/60 border border-rose-500/40 px-3 py-1.5 rounded-full text-xs text-rose-300">
+            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            <span>Caja Cerrada</span>
+          </div>
+        `;
+        closedBanner.classList.remove('hidden');
+        posInterface.classList.add('hidden');
+      }
+    }
+
+    async function handleOpenShift(e) {
+      e.preventDefault();
+      const cashier_name = document.getElementById('open-cashier-name').value;
+      const initial_cash = parseFloat(document.querySelector('input[name="open-initial-cash"]:checked').value);
+
+      try {
+        const res = await fetch(`${API}/pos/shifts/open`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cashier_name, initial_cash })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error abriendo turno');
+        
+        currentShift = data;
+        renderShiftState();
+        showToast(`Turno abierto con éxito para ${cashier_name}`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function openCloseShiftModal() {
+      document.getElementById('modal-close-shift').classList.remove('hidden');
+    }
+
+    async function handleCloseShift(e) {
+      e.preventDefault();
+      const actual_cash = parseFloat(document.getElementById('close-actual-cash').value);
+      const notes = document.getElementById('close-notes').value;
+
+      try {
+        const res = await fetch(`${API}/pos/shifts/${currentShift.id}/close`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actual_cash, notes })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error cerrando turno');
+
+        closeModal('modal-close-shift');
+        currentShift = null;
+        renderShiftState();
+        showToast(`Turno cerrado. Diferencia: $${parseFloat(data.difference).toFixed(2)}`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // ==========================================
+    // 2. MENÚ Y TICKET DE VENTA (POS)
+    // ==========================================
+    async function loadMenu() {
+      try {
+        const res = await fetch(`${API}/pos/menu`);
+        menuItems = await res.json();
+        const grid = document.getElementById('menu-grid');
+        grid.innerHTML = '';
+
+        if (menuItems.length === 0) {
+          grid.innerHTML = '<p class="text-sm text-slate-400 col-span-3 text-center py-8">No hay platillos dados de alta en el menú.</p>';
+          return;
+        }
+
+        menuItems.forEach(item => {
+          const card = document.createElement('div');
+          card.className = "bg-white p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition shadow-sm flex flex-col justify-between";
+          card.innerHTML = `
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">${item.category || 'General'}</span>
+              <h4 class="font-bold text-slate-800 text-sm mt-1.5">${item.name}</h4>
+              <p class="text-blue-600 font-extrabold text-lg mt-1">$${parseFloat(item.price).toFixed(2)}</p>
+            </div>
+            <button onclick="addToCart('${item.id}')" class="mt-3 w-full bg-slate-900 hover:bg-blue-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition">
+              + Agregar
+            </button>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function addToCart(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (!item) return;
+
+      const existing = cart.find(c => c.menu_item_id === itemId);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ menu_item_id: itemId, name: item.name, price: parseFloat(item.price), quantity: 1 });
+      }
+      renderCart();
+    }
+
+    function changeCartQty(index, delta) {
+      cart[index].quantity += delta;
+      if (cart[index].quantity <= 0) cart.splice(index, 1);
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      renderCart();
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      container.innerHTML = '';
+
+      if (cart.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">El ticket está vacío. Agrega platillos del menú.</p>';
+        document.getElementById('cart-total').innerText = '$0.00';
+        document.getElementById('change-display').innerText = '$0.00';
+        document.getElementById('btn-checkout').disabled = true;
+        return;
+      }
+
+      document.getElementById('btn-checkout').disabled = false;
+      let total = 0;
+
+      cart.forEach((c, idx) => {
+        const sub = c.price * c.quantity;
+        total += sub;
+
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between text-xs py-1 border-b border-slate-50";
+        row.innerHTML = `
+          <div class="flex-1 pr-2">
+            <p class="font-semibold text-slate-800">${c.name}</p>
+            <span class="text-slate-400">$${c.price.toFixed(2)} c/u</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button onclick="changeCartQty(${idx}, -1)" class="w-5 h-5 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-200">-</button>
+            <span class="font-bold w-4 text-center">${c.quantity}</span>
+            <button onclick="changeCartQty(${idx}, 1)" class="w-5 h-5 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-200">+</button>
+          </div>
+          <span class="font-bold text-slate-900 w-16 text-right">$${sub.toFixed(2)}</span>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
+      calculateChange();
+    }
+
+    function setPaymentMethod(method) {
+      paymentMethod = method;
+      const btnCash = document.getElementById('pay-btn-cash');
+      const btnCard = document.getElementById('pay-btn-card');
+      const cashFields = document.getElementById('cash-payment-fields');
+
+      if (method === 'CASH') {
+        btnCash.className = "py-2 rounded-lg text-sm font-semibold border-2 border-blue-600 bg-blue-50 text-blue-700";
+        btnCard.className = "py-2 rounded-lg text-sm font-semibold border-2 border-slate-200 text-slate-600 hover:border-slate-300";
+        cashFields.classList.remove('hidden');
+      } else {
+        btnCard.className = "py-2 rounded-lg text-sm font-semibold border-2 border-blue-600 bg-blue-50 text-blue-700";
+        btnCash.className = "py-2 rounded-lg text-sm font-semibold border-2 border-slate-200 text-slate-600 hover:border-slate-300";
+        cashFields.classList.add('hidden');
+      }
+    }
+
+    function calculateChange() {
+      if (paymentMethod !== 'CASH') return;
+      const total = cart.reduce((acc, c) => acc + (c.price * c.quantity), 0);
+      const given = parseFloat(document.getElementById('cash-given-input').value) || 0;
+      const changeEl = document.getElementById('change-display');
+
+      if (given >= total && total > 0) {
+        changeEl.innerText = `$${(given - total).toFixed(2)}`;
+        changeEl.className = "font-bold text-emerald-600 text-base";
+      } else {
+        changeEl.innerText = `$0.00`;
+        changeEl.className = "font-bold text-slate-400 text-base";
+      }
+    }
+
+    async function handleCheckout() {
+      if (cart.length === 0) return;
+      const total = cart.reduce((acc, c) => acc + (c.price * c.quantity), 0);
+      let cash_given = null;
+
+      if (paymentMethod === 'CASH') {
+        cash_given = parseFloat(document.getElementById('cash-given-input').value);
+        if (!cash_given || cash_given < total) {
+          showToast(`El efectivo entregado ($${cash_given || 0}) debe cubrir el total ($${total.toFixed(2)})`, true);
+          return;
+        }
+      }
+
+      const payload = {
+        items: cart.map(c => ({ menu_item_id: c.menu_item_id, quantity: c.quantity })),
+        payment_method: paymentMethod,
+        cash_given: cash_given
+      };
+
+      try {
+        const res = await fetch(`${API}/pos/orders/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error procesando cobro');
+
+        showToast(`¡Venta cobrada con éxito! Folio: ${data.order_number}`);
+        clearCart();
+        document.getElementById('cash-given-input').value = '';
+        await loadShift();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // ==========================================
+    // 3. INVENTARIO
+    // ==========================================
+    async function loadInventory() {
+      try {
+        const res = await fetch(`${API}/inventory/ingredients`);
+        ingredients = await res.json();
+        const tbody = document.getElementById('inventory-table-body');
+        tbody.innerHTML = '';
+
+        // Selectores de insumos en mermas y entradas
+        const selects = ['waste-process-ing', 'waste-general-ing', 'entry-ing-select'];
+        selects.forEach(sId => {
+          const el = document.getElementById(sId);
+          if (el) {
+            el.innerHTML = '<option value="">-- Selecciona Insumo --</option>';
+            ingredients.forEach(i => {
+              el.innerHTML += `<option value="${i.id}">${i.name} (Stock: ${parseFloat(i.current_stock)} ${i.unit})</option>`;
+            });
+          }
+        });
+
+        ingredients.forEach(ing => {
+          const cur = parseFloat(ing.current_stock);
+          const min = parseFloat(ing.min_stock);
+
+          let badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Óptimo</span>';
+          if (cur <= 0) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">🔴 Agotado</span>';
+          else if (cur <= min) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">🟡 Stock Bajo</span>';
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition";
+          tr.innerHTML = `
+            <td class="px-6 py-3 font-semibold text-slate-900">${ing.name}</td>
+            <td class="px-6 py-3 text-slate-500">${ing.category || '-'}</td>
+            <td class="px-6 py-3 font-bold text-slate-900">${cur.toFixed(2)} <span class="text-xs font-normal text-slate-400">${ing.unit}</span></td>
+            <td class="px-6 py-3 text-slate-500">${min.toFixed(2)} ${ing.unit}</td>
+            <td class="px-6 py-3 text-slate-600">${ing.cost_per_unit ? `$${parseFloat(ing.cost_per_unit).toFixed(2)}` : '-'}</td>
+            <td class="px-6 py-3 text-slate-500">${parseFloat(ing.waste_percentage).toFixed(1)}%</td>
+            <td class="px-6 py-3">${badge}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openNewIngredientModal() { document.getElementById('modal-new-ingredient').classList.remove('hidden'); }
+    function openStockEntryModal() { document.getElementById('modal-stock-entry').classList.remove('hidden'); }
+
+    async function handleCreateIngredient(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('new-ing-name').value,
+        category: document.getElementById('new-ing-cat').value || null,
+        unit: document.getElementById('new-ing-unit').value,
+        initial_stock: parseFloat(document.getElementById('new-ing-stock').value) || 0,
+        min_stock: parseFloat(document.getElementById('new-ing-min').value) || 0
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/ingredients`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error creando insumo');
+
+        closeModal('modal-new-ingredient');
+        showToast(`Insumo '${data.name}' dado de alta`);
+        loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function handleStockEntry(e) {
+      e.preventDefault();
+      const payload = {
+        ingredient_id: document.getElementById('entry-ing-select').value,
+        quantity: parseFloat(document.getElementById('entry-qty').value),
+        cost_per_unit: parseFloat(document.getElementById('entry-cost').value) || null,
+        note: document.getElementById('entry-note').value || null
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/stock/entry`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error registrando entrada');
+
+        closeModal('modal-stock-entry');
+        showToast(`Stock añadido con éxito`);
+        loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // ==========================================
+    // 4. MERMAS (OPERACIÓN DE COCINA)
+    // ==========================================
+    function updateProcessWastePreview() {
+      const gross = parseFloat(document.getElementById('waste-gross-qty').value) || 0;
+      const net = parseFloat(document.getElementById('waste-net-qty').value) || 0;
+
+      if (gross > 0 && net >= 0 && gross >= net) {
+        const waste = gross - net;
+        const pct = (waste / gross) * 100;
+        document.getElementById('calc-waste-qty').innerText = waste.toFixed(3);
+        document.getElementById('calc-waste-pct').innerText = `${pct.toFixed(2)}%`;
+      } else {
+        document.getElementById('calc-waste-qty').innerText = '0.000';
+        document.getElementById('calc-waste-pct').innerText = '0.00%';
+      }
+    }
+
+    async function handleProcessWaste(e) {
+      e.preventDefault();
+      const payload = {
+        ingredient_id: document.getElementById('waste-process-ing').value,
+        gross_quantity: parseFloat(document.getElementById('waste-gross-qty').value),
+        net_quantity: parseFloat(document.getElementById('waste-net-qty').value),
+        reason: document.getElementById('waste-process-reason').value || null,
+        registered_by: document.getElementById('waste-process-cook').value || null
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/waste/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error registrando merma');
+
+        showToast(`Merma registrada: ${data.waste_quantity} ${data.unit} (${data.waste_percentage}%)`);
+        e.target.reset();
+        updateProcessWastePreview();
+        loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function handleGeneralWaste(e) {
+      e.preventDefault();
+      const payload = {
+        ingredient_id: document.getElementById('waste-general-ing').value,
+        waste_type: document.getElementById('waste-general-type').value,
+        quantity: parseFloat(document.getElementById('waste-general-qty').value),
+        reason: document.getElementById('waste-general-reason').value || null
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/waste/general`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error registrando merma directa');
+
+        showToast(`Merma directa registrada con éxito`);
+        e.target.reset();
+        loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // ==========================================
+    // 5. MISE EN PLACE (PRODUCCIÓN)
+    // ==========================================
+    async function loadRecipes() {
+      try {
+        const res = await fetch(`${API}/inventory/recipes`);
+        recipes = await res.json();
+        
+        const subrecipes = recipes.filter(r => r.recipe_type === 'subreceta');
+        const select = document.getElementById('prod-subrecipe-select');
+        select.innerHTML = '<option value="">-- Selecciona Subreceta --</option>';
+
+        const listContainer = document.getElementById('subrecipes-list');
+        listContainer.innerHTML = '';
+
+        subrecipes.forEach(r => {
+          select.innerHTML += `<option value="${r.id}">${r.name} (Rinde: ${parseFloat(r.yield_quantity)} ${r.yield_unit})</option>`;
+          
+          const card = document.createElement('div');
+          card.className = "p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between";
+          card.innerHTML = `
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm">${r.name}</h4>
+              <p class="text-xs text-slate-500">Rendimiento estándar: ${parseFloat(r.yield_quantity)} ${r.yield_unit}</p>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded bg-blue-100 text-blue-800">Mise en place</span>
+          `;
+          listContainer.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function handleProduceSubrecipe(e) {
+      e.preventDefault();
+      const payload = {
+        recipe_id: document.getElementById('prod-subrecipe-select').value,
+        quantity_to_produce: parseFloat(document.getElementById('prod-quantity').value),
+        notes: document.getElementById('prod-notes').value || null,
+        produced_by: document.getElementById('prod-cook').value || null
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/subrecipes/produce`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error en producción');
+
+        showToast(`¡Lote de ${data.quantity_produced} ${data.unit} producido y almacenado!`);
+        e.target.reset();
+        loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+  </script>
+</body>
+</html>

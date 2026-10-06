@@ -6,6 +6,7 @@ services:
       - "8090:80" # Tu compu entra por el 8090, Nginx escucha en el 80
     volumes:
       - ./probando_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
     networks:
       - public_net
     depends_on:
