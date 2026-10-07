@@ -1,0 +1,46 @@
+services:
+  # 1. El Reverse Proxy (Expuesto con HTTP y HTTPS en la nube)
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./probando_nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - public_net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./first-pos-backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/first_pos
+    networks:
+      - public_net
+      - private_net
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # 3. Base de Datos PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: first_pos
+    volumes:
+      - ./postgres_aprendiendo:/var/lib/postgresql/data
+    networks:
+      - private_net
+    restart: unless-stopped
+
+networks:
+  public_net:
+  private_net:
