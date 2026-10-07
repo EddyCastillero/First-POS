@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>First-POS — Sistema de Punto de Venta e Inventario</title>
   <!-- Favicon -->
-  <link rel="icon" type="image/jpeg" href="favicon.jpeg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="icon" type="image/jpeg" href="/favicon.jpeg">
+  <link rel="apple-touch-icon" href="/favicon.png">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,13 +21,13 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
   <!-- TOPBAR -->
-  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+  <header class="bg-black text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between border-b border-neutral-800">
       <div class="flex items-center space-x-3">
         <span class="text-2xl">🍔</span>
         <div>
           <h1 class="text-xl font-bold tracking-tight">First-POS</h1>
-          <p class="text-xs text-slate-400">Restaurante & Comedor</p>
+          <p class="text-xs text-neutral-400">Restaurante & Comedor</p>
         </div>
       </div>
 
@@ -35,18 +38,18 @@
     </div>
 
     <!-- TABS DE NAVEGACIÓN -->
-    <div class="bg-slate-800 border-t border-slate-700">
+    <div class="bg-neutral-950">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 py-2">
-        <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-black text-white">
+        <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-black shadow-sm">
           💳 Caja (POS)
         </button>
-        <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+        <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
           📦 Inventario
         </button>
-        <button onclick="switchTab('waste')" id="tab-btn-waste" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+        <button onclick="switchTab('waste')" id="tab-btn-waste" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
           🥑 Mermas (Cocina)
         </button>
-        <button onclick="switchTab('production')" id="tab-btn-production" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition">
+        <button onclick="switchTab('production')" id="tab-btn-production" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
           🍲 Mise en Place
         </button>
       </div>
@@ -555,14 +558,14 @@
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-black', 'text-white');
-        btn.classList.add('text-slate-300', 'hover:bg-slate-700');
+        btn.classList.remove('bg-white', 'text-black', 'shadow-sm');
+        btn.classList.add('text-neutral-300', 'hover:bg-neutral-800');
       });
 
       document.getElementById(`tab-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-      activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700');
-      activeBtn.classList.add('bg-black', 'text-white');
+      activeBtn.classList.remove('text-neutral-300', 'hover:bg-neutral-800');
+      activeBtn.classList.add('bg-white', 'text-black', 'shadow-sm');
 
       if (tabId === 'inventory') loadInventory();
       if (tabId === 'pos') loadMenu();
