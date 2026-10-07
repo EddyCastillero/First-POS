@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-10-07 — Dominio Personalizado, SSL Automático y Pipeline CI/CD
+
+**Decisiones tomadas:**
+1. **Dominio Propio y Subdominios:** Dominio `leonelproyectos.me` registrado vía Namecheap (GitHub Student Developer Pack). DNS configurado con registro tipo A (`pos-qa`) apuntando a IP fija de GCP (`35.222.226.192`).
+2. **Cifrado SSL / TLS con Let's Encrypt:** Certificados emitidos de forma automatizada y gratuita con Certbot en modo standalone, montados en Nginx en modo solo lectura (`/etc/letsencrypt`). Redirección permanente (301) de HTTP (80) hacia HTTPS (443).
+3. **Pipeline CI/CD con GitHub Actions:** Creado workflow `.github/workflows/deploy-qa.yml` activado en pushes a la rama `qa`. Despliegue seguro mediante SSH (llave ed25519 en GitHub Secrets) que ejecuta pull, build de contenedores y migraciones Alembic de forma autónoma.
+4. **Diseño Visual de Alto Contraste:** Cambio de paleta de colores de acento de azul a negro/neutral para mayor contraste y formalidad, con favicon personalizado integrado.
+
+---
+
+## 2026-10-06 — Despliegue de QA en GCP y Finalización del Backend/Frontend
+
+**Decisiones tomadas:**
+1. **Regla de Merma por Proceso (Operativa):** Se implementó la regla de Peso Bruto vs Peso Neto ($Merma = Bruto - Neto$), calculando porcentaje de merma automáticamente y descontando del inventario atómicamente.
+2. **Turnos de Caja con Fondos Fijos:** Restricción estricta de fondo inicial a $1,000, $2,000 o $3,000 MXN para evitar descuadres de cajeros.
+3. **Platillos vinculados a Recetas:** Todo `MenuItem` apunta a una `Recipe`, unificando el descuento recursivo de insumos crudos y subrecetas (mise en place).
+4. **Cobro Atómico (ACID):** Validación y descuento con bloqueo pesimista (`SELECT ... FOR UPDATE`) en PostgreSQL para consistencia total en caja.
+5. **Frontend Ligero:** SPA en HTML5 + Tailwind CSS servida directamente por Nginx en el puerto 80 sin runtime de Node.js, ahorrando memoria RAM para la VM `e2-micro`.
+6. **Estrategia de Ambientes y Ramas:** 
+   - `dev`: Desarrollo local.
+   - `qa`: Ambiente de pruebas en la nube (desplegado en Compute Engine VM `e2-micro` en `us-central1`, IP `35.222.226.192`).
+   - `main`: Producción aislada.
+7. **Memoria SWAP en GCP:** 2 GB de SWAP configurados en el disco estándar de 30 GB para evitar que Docker agote el 1 GB de RAM física.
+
+---
+
 ## 2026-10-04 — Cambio de nube: GCP (se descarta AWS)
 
 **Contexto previo:** El 2026-09-30 se eligió AWS (ver entrada siguiente).
