@@ -1,0 +1,36 @@
+name: Deploy to QA (Google Cloud)
+
+on:
+  push:
+    branches:
+      - qa
+
+jobs:
+  deploy:
+    name: Deploy to GCP Compute Engine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH to GCP VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🚀 Iniciando despliegue en QA..."
+            cd ~/First-POS
+            
+            echo "📥 Descargando últimos cambios de la rama qa..."
+            git pull origin qa
+            
+            echo "🐳 Levantando contenedores con docker-compose.prod.yml..."
+            docker compose -f docker-compose.prod.yml up -d --build
+            
+            echo "🔄 Ejecutando migraciones de base de datos con Alembic..."
+            docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
+            
+            echo "✅ ¡Despliegue a QA completado exitosamente!"
