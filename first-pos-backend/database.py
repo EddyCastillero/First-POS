@@ -11,8 +11,11 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# 2. Formateo de la URL para SQLAlchemy
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("postgres://", "postgresql://")
+# 2. Formateo de la URL para SQLAlchemy (usando explícitamente el driver psycopg2)
+url = settings.DATABASE_URL.replace("postgres://", "postgresql+psycopg2://")
+if url.startswith("postgresql://"):
+    url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+SQLALCHEMY_DATABASE_URL = url
 
 # 3. Creación del Engine (El puente físico hacia Postgres)
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
