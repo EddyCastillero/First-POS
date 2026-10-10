@@ -28,6 +28,7 @@ from schemas.pos import (
     ShiftOpenRequest,
     ShiftCloseRequest,
     MenuItemCreate,
+    MenuItemUpdate,
     OrderCheckoutRequest,
 )
 
@@ -180,6 +181,45 @@ def reactivate_menu_item(db: Session, menu_item_id: UUID) -> dict:
     menu_item.is_active = True
     db.commit()
     return {"message": f"Platillo '{menu_item.name}' reactivado con éxito para venta en Caja.", "id": str(menu_item_id)}
+
+
+def update_menu_item(db: Session, menu_item_id: UUID, data: MenuItemUpdate) -> MenuItem:
+    """
+    Actualiza datos de un platillo, permitiendo reasignarle una receta técnica
+    cuando la original fue eliminada o cuando cambió su preparación.
+    """
+    from models.inventory import Recipe
+
+    menu_item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+    if not menu_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Platillo no encontrado.")
+
+    if data.name is not None and data.name.strip():
+        # Validar duplicados si cambia el nombre
+        existing = db.query(MenuItem).filter(
+            MenuItem.name.ilike(data.name.strip()),
+            MenuItem.id != menu_item_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Ya existe un platillo llamado '{data.name}'.")
+        menu_item.name = data.name.strip()
+
+    if data.category is not None:
+        menu_item.category = data.category.strip() if data.category.strip() else None
+
+    if data.price is not None:
+        menu_item.price = data.price
+
+    if data.recipe_id is not None:
+        recipe = db.query(Recipe).filter(Recipe.id == data.recipe_id).first()
+        if not recipe:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La receta especificada no existe.")
+        menu_item.recipe_id = recipe.id
+
+    db.commit()
+    db.refresh(menu_item)
+    return menu_item
+
 
 
 

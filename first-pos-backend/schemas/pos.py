@@ -69,7 +69,16 @@ class MenuItemCreate(BaseModel):
     recipe_id: UUID = Field(..., description="Receta de la que se descontarán los ingredientes")
 
 
+class MenuItemUpdate(BaseModel):
+    """Actualización de campos de un platillo, incluyendo reasignación de receta."""
+    name: Optional[str] = Field(None, min_length=1, max_length=150)
+    category: Optional[str] = Field(None, max_length=50)
+    price: Optional[Decimal] = Field(None, gt=0)
+    recipe_id: Optional[UUID] = Field(None, description="Nueva receta a vincular")
+
+
 class MenuItemResponse(BaseModel):
+
     id: UUID
     name: str
     category: Optional[str]

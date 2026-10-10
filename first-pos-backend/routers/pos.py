@@ -118,6 +118,21 @@ def reactivate_menu_item_endpoint(
     return service.reactivate_menu_item(db, menu_item_id)
 
 
+@router.patch(
+    "/menu/{menu_item_id}",
+    response_model=schemas.MenuItemResponse,
+    summary="Actualizar o reasignar receta a un platillo",
+)
+def update_menu_item_endpoint(
+    menu_item_id: UUID,
+    data: schemas.MenuItemUpdate,
+    db: Session = Depends(get_db)
+):
+    """Actualiza datos del platillo o le asigna una nueva receta técnica."""
+    return service.update_menu_item(db, menu_item_id, data)
+
+
+
 # ============================================================================
 # 3. ENDPOINTS DE COBRO (CHECKOUT ATÓMICO)
 # ============================================================================

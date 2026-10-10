@@ -147,9 +147,15 @@
           
           <!-- COLUMNA IZQUIERDA: MENÚ DE PLATILLOS -->
           <div class="lg:col-span-2">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-bold text-slate-900">Menú de Platillos</h2>
-              <span class="text-xs text-slate-500">Selecciona para agregar a la orden</span>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Menú de Platillos</h2>
+                <span class="text-xs text-slate-500">Selecciona para agregar a la orden</span>
+              </div>
+              <!-- Filtro rápido de categorías en caja -->
+              <div id="pos-category-filters" class="flex flex-wrap gap-1.5 text-xs">
+                <!-- Renderizado dinámico de categorías -->
+              </div>
             </div>
             
             <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -226,11 +232,31 @@
           <h2 class="text-xl font-bold text-slate-900">Almacén de Insumos</h2>
           <p class="text-sm text-slate-500">Control de materias primas, unidades y stock en bodega</p>
         </div>
-        <div class="flex space-x-3">
-          <button onclick="openNewIngredientModal()" class="px-4 py-2 bg-black hover:bg-neutral-800 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+            <label for="inventory-category-filter" class="text-xs font-semibold text-slate-500 whitespace-nowrap">Filtrar por:</label>
+            <select id="inventory-category-filter" onchange="filterInventoryByCategory()" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 pr-6">
+              <option value="ALL">Todas las Categorías</option>
+              <option value="Lácteos y derivados">🧀 Lácteos y derivados</option>
+              <option value="Carnes">🥩 Carnes</option>
+              <option value="Pescados y mariscos">🐟 Pescados y mariscos</option>
+              <option value="Verduras y hortalizas">🥬 Verduras y hortalizas</option>
+              <option value="Frutas">🍎 Frutas</option>
+              <option value="Cereales y granos">🌾 Cereales y granos</option>
+              <option value="Leguminosas">🫘 Leguminosas</option>
+              <option value="Harinas y almidones">🍞 Harinas y almidones</option>
+              <option value="Aceites y grasas vegetales">🫒 Aceites y grasas vegetales</option>
+              <option value="Endulzantes y conservas">🍯 Endulzantes y conservas</option>
+              <option value="Especias secas y hierbas frescas">🌿 Especias secas y hierbas frescas</option>
+              <option value="Salsas base, vinagres y caldos">🥣 Salsas base, vinagres y caldos</option>
+              <option value="Sal, azúcares y condimentos">🧂 Sal, azúcares y condimentos</option>
+              <option value="OTRAS">Otras / Sin Categoría</option>
+            </select>
+          </div>
+          <button onclick="openNewIngredientModal()" class="px-4 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
             + Nuevo Insumo
           </button>
-          <button onclick="openStockEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+          <button onclick="openStockEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
             📥 Entrada de Stock
           </button>
         </div>
@@ -485,9 +511,23 @@
           <h2 class="text-xl font-bold text-slate-900">Catálogo de Productos y Platillos (POS)</h2>
           <p class="text-sm text-slate-500">Configura los productos que se venden en Caja, sus precios y la receta técnica que descuentan.</p>
         </div>
-        <button onclick="openNewMenuItemModal()" class="px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
-          + Nuevo Platillo al Menú
-        </button>
+        <div class="flex items-center space-x-3">
+          <!-- Filtro de platillos activos vs retirados -->
+          <div class="bg-slate-200 p-1 rounded-xl flex space-x-1 text-xs">
+            <button onclick="setCatalogFilter('active')" id="catalog-filter-active" class="px-3 py-1.5 rounded-lg font-bold bg-white text-black shadow-xs transition">
+              🟢 Activos en Caja
+            </button>
+            <button onclick="setCatalogFilter('retired')" id="catalog-filter-retired" class="px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-black transition">
+              ⚪ Retirados / Históricos
+            </button>
+            <button onclick="setCatalogFilter('all')" id="catalog-filter-all" class="px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-black transition">
+              Todos
+            </button>
+          </div>
+          <button onclick="openNewMenuItemModal()" class="px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+            + Nuevo Platillo al Menú
+          </button>
+        </div>
       </div>
 
       <!-- TABLA DEL CATÁLOGO DE MENÚ -->
@@ -660,7 +700,22 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-700 mb-1">Categoría:</label>
-            <input type="text" id="new-ing-cat" placeholder="lacteos" class="w-full px-3 py-2 border rounded-lg text-sm">
+            <select id="new-ing-cat" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+              <option value="">-- Selecciona Categoría --</option>
+              <option value="Lácteos y derivados">🧀 Lácteos y derivados</option>
+              <option value="Carnes">🥩 Carnes</option>
+              <option value="Pescados y mariscos">🐟 Pescados y mariscos</option>
+              <option value="Verduras y hortalizas">🥬 Verduras y hortalizas</option>
+              <option value="Frutas">🍎 Frutas</option>
+              <option value="Cereales y granos">🌾 Cereales y granos</option>
+              <option value="Leguminosas">🫘 Leguminosas</option>
+              <option value="Harinas y almidones">🍞 Harinas y almidones</option>
+              <option value="Aceites y grasas vegetales">🫒 Aceites y grasas vegetales</option>
+              <option value="Endulzantes y conservas">🍯 Endulzantes y conservas</option>
+              <option value="Especias secas y hierbas frescas">🌿 Especias secas y hierbas frescas</option>
+              <option value="Salsas base, vinagres y caldos">🥣 Salsas base, vinagres y caldos</option>
+              <option value="Sal, azúcares y condimentos">🧂 Sal, azúcares y condimentos</option>
+            </select>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-700 mb-1">Unidad Base:</label>
@@ -792,11 +847,20 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Precio al Público ($):</label>
-            <input type="number" step="0.01" id="new-menu-price" required placeholder="125.00" class="w-full px-3 py-2 border rounded-lg text-sm">
+            <input type="number" step="0.01" id="new-menu-price" required placeholder="125.00" class="w-full px-3 py-2 border rounded-lg text-sm font-semibold">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Categoría:</label>
-            <input type="text" id="new-menu-cat" placeholder="Desayunos" class="w-full px-3 py-2 border rounded-lg text-sm">
+            <select id="new-menu-cat" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white font-medium">
+              <option value="">-- Selecciona --</option>
+              <option value="Desayunos">🍳 Desayunos</option>
+              <option value="Comidas">🍽️ Comidas</option>
+              <option value="Cenas">🌙 Cenas</option>
+              <option value="Bebidas">🥤 Bebidas</option>
+              <option value="Postres">🍰 Postres</option>
+              <option value="Entradas y Snacks">🍟 Entradas y Snacks</option>
+              <option value="Adicionales y Extras">➕ Adicionales y Extras</option>
+            </select>
           </div>
         </div>
 
@@ -816,6 +880,41 @@
     </div>
   </div>
 
+  <!-- MODAL: REASIGNAR RECETA A PLATILLO HISTÓRICO / RETIRADO -->
+  <div id="modal-reassign-recipe" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Asignar Receta al Platillo</h3>
+          <p id="reassign-item-name" class="text-xs text-slate-500 font-semibold"></p>
+        </div>
+        <button type="button" onclick="closeModal('modal-reassign-recipe')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+      </div>
+
+      <form onsubmit="handleReassignRecipe(event)" class="space-y-4">
+        <input type="hidden" id="reassign-item-id">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Selecciona la Receta Técnica:</label>
+          <p class="text-[11px] text-slate-500 mb-2">Para poder reactivar este platillo en Caja, asócialo a una receta activa de cocina:</p>
+          <select id="reassign-recipe-select" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+            <!-- Opciones dinámicas -->
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1">
+          <input type="checkbox" id="reassign-auto-reactivate" checked class="rounded border-slate-300 text-black focus:ring-black">
+          <label for="reassign-auto-reactivate" class="text-xs text-slate-700 font-medium">Reactivar automáticamente en Caja tras vincular</label>
+        </div>
+
+        <div class="flex space-x-3 pt-3 border-t">
+          <button type="button" onclick="closeModal('modal-reassign-recipe')" class="w-1/2 py-2 border rounded-lg text-sm font-semibold">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2 bg-black text-white rounded-lg text-sm font-bold shadow-sm">Vincular y Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT DE LA APLICACIÓN -->
   <script>
     const API = ''; // Llamadas relativas al mismo origen Nginx
@@ -829,25 +928,75 @@
     // ==========================================
     // INICIALIZACIÓN
     // ==========================================
+    // CLIENT-SIDE ROUTING (HASH ROUTER)
+    // ==========================================
+    const ROUTE_MAP = {
+      'pos': 'pos',
+      'caja': 'pos',
+      'inventario': 'inventory',
+      'inventory': 'inventory',
+      'mermas': 'waste',
+      'waste': 'waste',
+      'recetas': 'production',
+      'production': 'production',
+      'catalogo': 'menu',
+      'menu': 'menu',
+      'ventas': 'daily-sales',
+      'reportes': 'daily-sales',
+      'daily-sales': 'daily-sales'
+    };
+
+    const TAB_TO_ROUTE = {
+      'pos': 'caja',
+      'inventory': 'inventario',
+      'waste': 'mermas',
+      'production': 'recetas',
+      'menu': 'catalogo',
+      'daily-sales': 'ventas'
+    };
+
     window.addEventListener('DOMContentLoaded', async () => {
       await loadShift();
       await loadMenu();
       await loadInventory();
       await loadRecipes();
+
+      // Cargar la ruta que venga en la URL (ej. #inventario) o por defecto #caja
+      const initialHash = window.location.hash.replace('#', '').toLowerCase();
+      const targetTab = ROUTE_MAP[initialHash] || 'pos';
+      switchTab(targetTab, false);
     });
 
-    // Pestañas
-    function switchTab(tabId) {
+    // Detectar si el usuario usa las flechas del navegador (Atrás / Adelante)
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const targetTab = ROUTE_MAP[hash] || 'pos';
+      switchTab(targetTab, false);
+    });
+
+    // Pestañas con actualización de URL (Rutas)
+    function switchTab(tabId, updateHash = true) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('bg-white', 'text-black', 'shadow-sm');
         btn.classList.add('text-neutral-300', 'hover:bg-neutral-800');
       });
 
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const targetEl = document.getElementById(`tab-${tabId}`);
+      if (!targetEl) return;
+      targetEl.classList.remove('hidden');
+
       const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-      activeBtn.classList.remove('text-neutral-300', 'hover:bg-neutral-800');
-      activeBtn.classList.add('bg-white', 'text-black', 'shadow-sm');
+      if (activeBtn) {
+        activeBtn.classList.remove('text-neutral-300', 'hover:bg-neutral-800');
+        activeBtn.classList.add('bg-white', 'text-black', 'shadow-sm');
+      }
+
+      // Actualizar el hash en la barra del navegador (ej. #inventario)
+      if (updateHash) {
+        const routeName = TAB_TO_ROUTE[tabId] || tabId;
+        window.location.hash = routeName;
+      }
 
       if (tabId === 'inventory') loadInventory();
       if (tabId === 'pos') loadMenu();
@@ -989,41 +1138,103 @@
     // ==========================================
     // 2. MENÚ Y TICKET DE VENTA (POS)
     // ==========================================
+    let currentPosCategoryFilter = 'ALL';
+
+    function setPosCategoryFilter(category) {
+      currentPosCategoryFilter = category;
+      renderMenuGrid();
+      renderPosCategoryFilters();
+    }
+
     async function loadMenu() {
       try {
         const res = await fetch(`${API}/pos/menu`);
         menuItems = await res.json();
-        const grid = document.getElementById('menu-grid');
-        grid.innerHTML = '';
-
-        if (menuItems.length === 0) {
-          grid.innerHTML = '<p class="text-sm text-slate-400 col-span-3 text-center py-8">No hay platillos dados de alta en el menú.</p>';
-          return;
-        }
-
-        menuItems.forEach(item => {
-          const card = document.createElement('div');
-          card.className = "bg-white p-4 rounded-xl border border-slate-200 hover:border-black transition shadow-sm flex flex-col justify-between";
-          card.innerHTML = `
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">${item.category || 'General'}</span>
-              <h4 class="font-bold text-slate-800 text-sm mt-1.5">${item.name}</h4>
-              <p class="text-black font-extrabold text-lg mt-1">$${parseFloat(item.price).toFixed(2)}</p>
-            </div>
-            <button onclick="addToCart('${item.id}')" class="mt-3 w-full bg-slate-900 hover:bg-black text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition">
-              + Agregar
-            </button>
-          `;
-          grid.appendChild(card);
-        });
+        renderPosCategoryFilters();
+        renderMenuGrid();
       } catch (err) {
         console.error(err);
       }
     }
 
+    function renderPosCategoryFilters() {
+      const container = document.getElementById('pos-category-filters');
+      if (!container) return;
+
+      // Obtener categorías únicas de los platillos activos
+      const categories = Array.from(new Set(menuItems.map(m => m.category || 'General').filter(Boolean)));
+      if (categories.length <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `
+        <button onclick="setPosCategoryFilter('ALL')" class="px-2.5 py-1 rounded-lg font-bold transition ${currentPosCategoryFilter === 'ALL' ? 'bg-black text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}">
+          Todos
+        </button>
+      `;
+
+      categories.forEach(cat => {
+        const isSelected = currentPosCategoryFilter === cat;
+        html += `
+          <button onclick="setPosCategoryFilter('${cat.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg font-bold transition ${isSelected ? 'bg-black text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}">
+            ${cat}
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function renderMenuGrid() {
+      const grid = document.getElementById('menu-grid');
+      grid.innerHTML = '';
+
+      let items = menuItems;
+      if (currentPosCategoryFilter !== 'ALL') {
+        items = menuItems.filter(m => (m.category || 'General') === currentPosCategoryFilter);
+      }
+
+      if (items.length === 0) {
+        grid.innerHTML = `<p class="text-sm text-slate-400 col-span-3 text-center py-8">No hay platillos en la categoría "${currentPosCategoryFilter}".</p>`;
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 hover:border-black transition shadow-sm flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">${item.category || 'General'}</span>
+            <h4 class="font-bold text-slate-800 text-sm mt-1.5">${item.name}</h4>
+            <p class="text-black font-extrabold text-lg mt-1">$${parseFloat(item.price).toFixed(2)}</p>
+          </div>
+          <button onclick="addToCart('${item.id}')" class="mt-3 w-full bg-slate-900 hover:bg-black text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition">
+            + Agregar
+          </button>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
     // ==========================================
     // ADMINISTRACIÓN DEL CATÁLOGO DE MENÚ (POS)
     // ==========================================
+    let currentCatalogFilter = 'active'; // 'active', 'retired', 'all'
+
+    function setCatalogFilter(filter) {
+      currentCatalogFilter = filter;
+      ['active', 'retired', 'all'].forEach(f => {
+        const btn = document.getElementById(`catalog-filter-${f}`);
+        if (f === filter) {
+          btn.className = "px-3 py-1.5 rounded-lg font-bold bg-white text-black shadow-xs transition";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-black transition";
+        }
+      });
+      renderMenuCatalogTable();
+    }
+
     async function loadMenuCatalog() {
       try {
         const [resMenu, resRecipes] = await Promise.all([
@@ -1032,44 +1243,133 @@
         ]);
         menuItems = await resMenu.json();
         recipes = await resRecipes.json();
-
-        const tbody = document.getElementById('menu-catalog-table-body');
-        tbody.innerHTML = '';
-
-        if (menuItems.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">No hay productos en el menú del POS.</td></tr>';
-          return;
-        }
-
-        menuItems.forEach(item => {
-          const recipe = recipes.find(r => r.id === item.recipe_id);
-          const recipeName = recipe ? recipe.name : (item.recipe_id ? 'Receta no encontrada' : 'Sin receta (Desvinculada)');
-          const statusBadge = item.is_active 
-            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Activo en Caja</span>'
-            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">⚪ Retirado de Caja</span>';
-
-          const actionBtn = item.is_active
-            ? `<button onclick="handleDeleteMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Retirar platillo del menú">🗑️ Retirar</button>`
-            : `<button onclick="handleReactivateMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition" title="Reactivar en caja">♻️ Reactivar</button>`;
-
-          const tr = document.createElement('tr');
-          tr.className = item.is_active ? "hover:bg-slate-50 transition" : "hover:bg-slate-50 opacity-60 transition";
-          tr.innerHTML = `
-            <td class="px-6 py-3.5 font-bold text-slate-900">${item.name}</td>
-            <td class="px-6 py-3.5 text-slate-500">${item.category || '-'}</td>
-            <td class="px-6 py-3.5 font-extrabold text-slate-900">$${parseFloat(item.price).toFixed(2)}</td>
-            <td class="px-6 py-3.5">
-              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-neutral-100 text-neutral-800 border border-neutral-200">
-                🍳 ${recipeName}
-              </span>
-            </td>
-            <td class="px-6 py-3.5">${statusBadge}</td>
-            <td class="px-6 py-3.5 text-center">${actionBtn}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+        renderMenuCatalogTable();
       } catch (err) {
         console.error('Error cargando catálogo de menú:', err);
+      }
+    }
+
+    function renderMenuCatalogTable() {
+      const tbody = document.getElementById('menu-catalog-table-body');
+      tbody.innerHTML = '';
+
+      let filteredItems = menuItems;
+      if (currentCatalogFilter === 'active') {
+        filteredItems = menuItems.filter(item => item.is_active);
+      } else if (currentCatalogFilter === 'retired') {
+        filteredItems = menuItems.filter(item => !item.is_active);
+      }
+
+      if (filteredItems.length === 0) {
+        const msg = currentCatalogFilter === 'active' 
+          ? 'No hay platillos activos actualmente a la venta.' 
+          : currentCatalogFilter === 'retired' 
+            ? 'No hay platillos retirados o históricos en archivo.' 
+            : 'No hay productos registrados en el menú del POS.';
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">${msg}</td></tr>`;
+        return;
+      }
+
+      filteredItems.forEach(item => {
+        const recipe = recipes.find(r => r.id === item.recipe_id);
+        const hasValidRecipe = Boolean(recipe);
+        
+        let recipeBadge = '';
+        if (hasValidRecipe) {
+          recipeBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-neutral-100 text-neutral-800 border border-neutral-200">🍳 ${recipe.name}</span>`;
+        } else {
+          recipeBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="Su receta original fue eliminada">⚠️ Sin Receta Activa</span>`;
+        }
+
+        let statusBadge = '';
+        if (item.is_active) {
+          statusBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Activo en Caja</span>';
+        } else if (!hasValidRecipe) {
+          statusBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200" title="Histórico de ventas. No disponible para venta.">⚪ Histórico (Sin receta)</span>';
+        } else {
+          statusBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">⚪ Retirado de Caja</span>';
+        }
+
+        let actionBtns = '';
+        if (item.is_active) {
+          actionBtns = `<button onclick="handleDeleteMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg text-xs font-semibold transition" title="Retirar platillo de caja">🗑️ Retirar</button>`;
+        } else {
+          // Si está inactivo y NO tiene receta válida, ofrecemos "Vincular Receta"
+          if (!hasValidRecipe) {
+            actionBtns = `<button onclick="openReassignRecipeModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-xs font-bold bg-black hover:bg-neutral-800 text-white rounded-lg transition" title="Asignar una nueva receta a este platillo para volver a venderlo">🔗 Asignar Receta</button>`;
+          } else {
+            actionBtns = `
+              <div class="flex items-center justify-center space-x-1.5">
+                <button onclick="handleReactivateMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-xs font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition" title="Reactivar en caja">♻️ Reactivar</button>
+                <button onclick="openReassignRecipeModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="px-2 py-1 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Cambiar receta vinculada">✏️</button>
+              </div>
+            `;
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = item.is_active ? "hover:bg-slate-50 transition" : "hover:bg-slate-50 bg-slate-50/40 opacity-75 transition";
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 font-bold text-slate-900">${item.name}</td>
+          <td class="px-6 py-3.5 text-slate-500">${item.category || '-'}</td>
+          <td class="px-6 py-3.5 font-extrabold text-slate-900">$${parseFloat(item.price).toFixed(2)}</td>
+          <td class="px-6 py-3.5">${recipeBadge}</td>
+          <td class="px-6 py-3.5">${statusBadge}</td>
+          <td class="px-6 py-3.5 text-center">${actionBtns}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openReassignRecipeModal(itemId, itemName) {
+      document.getElementById('reassign-item-id').value = itemId;
+      document.getElementById('reassign-item-name').innerText = `Platillo: ${itemName}`;
+      
+      const select = document.getElementById('reassign-recipe-select');
+      select.innerHTML = '<option value="">-- Selecciona una Receta --</option>';
+
+      recipes.forEach(r => {
+        const typeBadge = r.recipe_type === 'receta' ? '[Platillo]' : '[Subreceta]';
+        select.innerHTML += `<option value="${r.id}">${typeBadge} ${r.name} (Rinde: ${parseFloat(r.yield_quantity)} ${r.yield_unit})</option>`;
+      });
+
+      document.getElementById('modal-reassign-recipe').classList.remove('hidden');
+    }
+
+    async function handleReassignRecipe(e) {
+      e.preventDefault();
+      const itemId = document.getElementById('reassign-item-id').value;
+      const recipeId = document.getElementById('reassign-recipe-select').value;
+      const autoReactivate = document.getElementById('reassign-auto-reactivate').checked;
+
+      if (!recipeId) {
+        showToast('Por favor selecciona una receta.', true);
+        return;
+      }
+
+      try {
+        // 1. Vincular la nueva receta
+        const resPatch = await fetch(`${API}/pos/menu/${itemId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipe_id: recipeId })
+        });
+        const itemUpdated = await resPatch.json();
+        if (!resPatch.ok) throw new Error(itemUpdated.detail || 'Error vinculando receta');
+
+        // 2. Reactivar si el usuario lo marcó
+        if (autoReactivate) {
+          const resReact = await fetch(`${API}/pos/menu/${itemId}/reactivate`, { method: 'POST' });
+          const reactData = await resReact.json();
+          if (!resReact.ok) throw new Error(reactData.detail || 'Error reactivando platillo');
+        }
+
+        showToast(`¡Receta vinculada y platillo '${itemUpdated.name}' listo!`);
+        closeModal('modal-reassign-recipe');
+        await loadMenuCatalog();
+        await loadMenu();
+      } catch (err) {
+        showToast(err.message, true);
       }
     }
 
@@ -1149,6 +1449,7 @@
         showToast(err.message, true);
       }
     }
+
 
     function addToCart(itemId) {
       const item = menuItems.find(m => m.id === itemId);
@@ -1286,12 +1587,18 @@
     // ==========================================
     // 3. INVENTARIO
     // ==========================================
+    let currentInventoryFilter = 'ALL';
+
+    function filterInventoryByCategory() {
+      const select = document.getElementById('inventory-category-filter');
+      currentInventoryFilter = select.value;
+      renderInventoryTable();
+    }
+
     async function loadInventory() {
       try {
         const res = await fetch(`${API}/inventory/ingredients`);
         ingredients = await res.json();
-        const tbody = document.getElementById('inventory-table-body');
-        tbody.innerHTML = '';
 
         // Selectores de insumos en mermas y entradas
         const selects = ['waste-process-ing', 'waste-general-ing', 'entry-ing-select'];
@@ -1305,35 +1612,66 @@
           }
         });
 
-        ingredients.forEach(ing => {
-          const cur = parseFloat(ing.current_stock);
-          const min = parseFloat(ing.min_stock);
-
-          let badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Óptimo</span>';
-          if (cur <= 0) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">🔴 Agotado</span>';
-          else if (cur <= min) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">🟡 Stock Bajo</span>';
-
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition";
-          tr.innerHTML = `
-            <td class="px-6 py-3 font-semibold text-slate-900">${ing.name}</td>
-            <td class="px-6 py-3 text-slate-500">${ing.category || '-'}</td>
-            <td class="px-6 py-3 font-bold text-slate-900">${cur.toFixed(2)} <span class="text-xs font-normal text-slate-400">${ing.unit}</span></td>
-            <td class="px-6 py-3 text-slate-500">${min.toFixed(2)} ${ing.unit}</td>
-            <td class="px-6 py-3 text-slate-600">${ing.cost_per_unit ? `$${parseFloat(ing.cost_per_unit).toFixed(2)}` : '-'}</td>
-            <td class="px-6 py-3 text-slate-500">${parseFloat(ing.waste_percentage).toFixed(1)}%</td>
-            <td class="px-6 py-3">${badge}</td>
-            <td class="px-6 py-3 text-center">
-              <button onclick="handleDeleteIngredient('${ing.id}', '${ing.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Eliminar insumo">
-                🗑️
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+        renderInventoryTable();
       } catch (err) {
         console.error(err);
       }
+    }
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventory-table-body');
+      tbody.innerHTML = '';
+
+      let filtered = ingredients;
+      if (currentInventoryFilter !== 'ALL') {
+        if (currentInventoryFilter === 'OTRAS') {
+          filtered = ingredients.filter(i => !i.category || i.category.trim() === '');
+        } else {
+          filtered = ingredients.filter(i => i.category === currentInventoryFilter);
+        }
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-8 text-center text-slate-400 italic">
+              ${currentInventoryFilter === 'ALL' ? 'No hay insumos dados de alta en el almacén.' : `No hay insumos registrados en la categoría "${currentInventoryFilter}".`}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(ing => {
+        const cur = parseFloat(ing.current_stock);
+        const min = parseFloat(ing.min_stock);
+
+        let badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Óptimo</span>';
+        if (cur <= 0) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">🔴 Agotado</span>';
+        else if (cur <= min) badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">🟡 Stock Bajo</span>';
+
+        const categoryBadge = ing.category
+          ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">${ing.category}</span>`
+          : `<span class="text-xs text-slate-400 italic">Sin categoría</span>`;
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="px-6 py-3 font-semibold text-slate-900">${ing.name}</td>
+          <td class="px-6 py-3">${categoryBadge}</td>
+          <td class="px-6 py-3 font-bold text-slate-900">${cur.toFixed(2)} <span class="text-xs font-normal text-slate-400">${ing.unit}</span></td>
+          <td class="px-6 py-3 text-slate-500">${min.toFixed(2)} ${ing.unit}</td>
+          <td class="px-6 py-3 text-slate-600">${ing.cost_per_unit ? `$${parseFloat(ing.cost_per_unit).toFixed(2)}` : '-'}</td>
+          <td class="px-6 py-3 text-slate-500">${parseFloat(ing.waste_percentage).toFixed(1)}%</td>
+          <td class="px-6 py-3">${badge}</td>
+          <td class="px-6 py-3 text-center">
+            <button onclick="handleDeleteIngredient('${ing.id}', '${ing.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Eliminar insumo">
+              🗑️
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     async function handleDeleteIngredient(id, name) {
@@ -1561,7 +1899,7 @@
       
       let options = '<optgroup label="Insumos Crudos">';
       ingredients.forEach(i => {
-        options += `<option value="ing:${i.id}">${i.name} (${i.unit})</option>`;
+        options += `<option value="ing:${i.id}" data-unit="${i.unit}">${i.name} (${i.unit})</option>`;
       });
       options += '</optgroup>';
 
@@ -1569,27 +1907,39 @@
       if (subrecipes.length) {
         options += '<optgroup label="Subrecetas (Mise en place)">';
         subrecipes.forEach(s => {
-          options += `<option value="sub:${s.id}">${s.name} (${s.yield_unit})</option>`;
+          options += `<option value="sub:${s.id}" data-unit="${s.yield_unit}">${s.name} (${s.yield_unit})</option>`;
         });
         options += '</optgroup>';
       }
+
+      // Obtener la unidad inicial por defecto de la primera opción
+      const defaultUnit = ingredients.length > 0 ? ingredients[0].unit : (subrecipes.length > 0 ? subrecipes[0].yield_unit : 'g');
 
       const row = document.createElement('div');
       row.id = rowId;
       row.className = "flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 text-xs";
       row.innerHTML = `
-        <select class="item-target flex-1 px-2 py-1.5 border rounded bg-white text-xs" required>
+        <select class="item-target flex-1 px-2 py-1.5 border rounded bg-white text-xs" required onchange="handleRecipeTargetUnitChange('${rowId}', this)">
           ${options}
         </select>
-        <input type="number" step="0.001" placeholder="Cant." class="item-qty w-20 px-2 py-1.5 border rounded bg-white text-xs" required>
-        <select class="item-unit w-20 px-2 py-1.5 border rounded bg-white text-xs">
-          <option value="g">g</option>
-          <option value="ml">ml</option>
-          <option value="pza">pza</option>
-        </select>
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-500 hover:text-rose-700 px-1 font-bold text-sm">&times;</button>
+        <input type="number" step="0.001" placeholder="Cant." class="item-qty w-24 px-2 py-1.5 border rounded bg-white text-xs font-semibold" required>
+        <input type="hidden" class="item-unit" value="${defaultUnit}">
+        <span class="item-unit-badge w-14 text-center px-2 py-1.5 rounded bg-slate-200 text-slate-700 font-bold text-xs select-none">
+          ${defaultUnit}
+        </span>
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-500 hover:text-rose-700 px-1 font-bold text-sm" title="Quitar">&times;</button>
       `;
       container.appendChild(row);
+    }
+
+    function handleRecipeTargetUnitChange(rowId, selectElement) {
+      const selectedOption = selectElement.options[selectElement.selectedIndex];
+      const unit = selectedOption.getAttribute('data-unit') || 'g';
+      const row = document.getElementById(rowId);
+      if (row) {
+        row.querySelector('.item-unit').value = unit;
+        row.querySelector('.item-unit-badge').innerText = unit;
+      }
     }
 
     async function handleCreateRecipe(e) {
