@@ -127,6 +127,63 @@ def get_menu_items(db: Session, active_only: bool = True) -> List[MenuItem]:
     return query.order_by(MenuItem.name.asc()).all()
 
 
+def delete_menu_item(db: Session, menu_item_id: UUID) -> dict:
+    """
+    Elimina o retira un platillo del menú de venta.
+    Si ya tiene ventas cobradas históricas, lo desactiva (is_active = False)
+    para preservar los folios y la contabilidad.
+    Si no tiene ventas, lo borra físicamente.
+    """
+    from models.pos import OrderItem
+
+    menu_item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+    if not menu_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Platillo no encontrado.")
+
+    has_sales = db.query(OrderItem).filter(OrderItem.menu_item_id == menu_item_id).first()
+    name = menu_item.name
+
+    if has_sales:
+        menu_item.is_active = False
+        db.commit()
+        return {"message": f"Platillo '{name}' retirado del menú (desactivado por ventas históricas).", "id": str(menu_item_id)}
+    else:
+        db.delete(menu_item)
+        db.commit()
+        return {"message": f"Platillo '{name}' eliminado exitosamente del catálogo.", "id": str(menu_item_id)}
+
+
+def reactivate_menu_item(db: Session, menu_item_id: UUID) -> dict:
+    """
+    Reactiva un platillo retirado para que vuelva a estar disponible en Caja.
+    Valida que tenga una receta válida asignada.
+    """
+    from models.inventory import Recipe
+
+    menu_item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+    if not menu_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Platillo no encontrado.")
+
+    if not menu_item.recipe_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede reactivar '{menu_item.name}' porque su receta original fue eliminada. Debes asignarle una receta primero."
+        )
+
+    recipe = db.query(Recipe).filter(Recipe.id == menu_item.recipe_id).first()
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede reactivar '{menu_item.name}' porque la receta vinculada ya no existe."
+        )
+
+    menu_item.is_active = True
+    db.commit()
+    return {"message": f"Platillo '{menu_item.name}' reactivado con éxito para venta en Caja.", "id": str(menu_item_id)}
+
+
+
+
 # ============================================================================
 # 3. EL FLUJO DORADO DE COBRO (CHECKOUT ATÓMICO CON INVENTARIO)
 # ============================================================================
@@ -309,3 +366,88 @@ def checkout_order(db: Session, data: OrderCheckoutRequest) -> Order:
     db.commit()
     db.refresh(order)
     return order
+
+
+# ============================================================================
+# 4. REPORTES DE VENTAS POR DÍA
+# ============================================================================
+
+def get_daily_sales_report(db: Session, target_date_str: Optional[str] = None) -> dict:
+    """
+    Genera el corte / reporte consolidado de ventas de un día específico (YYYY-MM-DD).
+    Si no se envía fecha, utiliza la fecha UTC actual.
+    Calcula:
+    - Ventas totales
+    - Ventas en efectivo
+    - Ventas en tarjeta
+    - Cantidad total de tickets cobrados
+    - Ticket promedio
+    - Desglose orden por orden con folio, cajero, método y total.
+    """
+    if target_date_str:
+        try:
+            target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato de fecha inválido. Utiliza YYYY-MM-DD (ejemplo: 2026-10-09)."
+            )
+    else:
+        target_date = datetime.utcnow().date()
+
+    start_datetime = datetime.combine(target_date, datetime.min.time())
+    end_datetime = datetime.combine(target_date, datetime.max.time())
+
+    # Traer órdenes del día completadas con sus items y turno cargados
+    orders = (
+        db.query(Order)
+        .options(selectinload(Order.items), selectinload(Order.cash_cut))
+        .filter(
+            Order.created_at >= start_datetime,
+            Order.created_at <= end_datetime,
+            Order.status == OrderStatus.COMPLETED
+        )
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+
+    total_sales = Decimal("0.00")
+    cash_sales = Decimal("0.00")
+    card_sales = Decimal("0.00")
+    orders_count = len(orders)
+    orders_summary = []
+
+    for ord_obj in orders:
+        amt = ord_obj.total_amount
+        total_sales += amt
+        if ord_obj.payment_method == PaymentMethod.CASH:
+            cash_sales += amt
+        elif ord_obj.payment_method == PaymentMethod.CARD:
+            card_sales += amt
+
+        items_count = sum(item.quantity for item in ord_obj.items)
+        cashier = ord_obj.cash_cut.cashier_name if ord_obj.cash_cut else "Caja General"
+
+        orders_summary.append({
+            "id": ord_obj.id,
+            "order_number": ord_obj.order_number,
+            "created_at": ord_obj.created_at,
+            "cashier_name": cashier,
+            "payment_method": ord_obj.payment_method,
+            "total_amount": amt,
+            "items_count": items_count,
+            "notes": ord_obj.notes,
+        })
+
+    average_ticket = (total_sales / Decimal(orders_count)).quantize(Decimal("0.01")) if orders_count > 0 else Decimal("0.00")
+
+    return {
+        "date": target_date.strftime("%Y-%m-%d"),
+        "total_sales": total_sales,
+        "cash_sales": cash_sales,
+        "card_sales": card_sales,
+        "orders_count": orders_count,
+        "average_ticket": average_ticket,
+        "orders": orders_summary,
+    }
+

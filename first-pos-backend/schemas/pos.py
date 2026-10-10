@@ -74,7 +74,7 @@ class MenuItemResponse(BaseModel):
     name: str
     category: Optional[str]
     price: Decimal
-    recipe_id: UUID
+    recipe_id: Optional[UUID]
     is_active: bool
     created_at: datetime
 
@@ -131,3 +131,29 @@ class OrderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================================
+# 4. SCHEMAS DE REPORTES DE VENTAS POR DÍA
+# ============================================================================
+
+class DailyOrderSummary(BaseModel):
+    id: UUID
+    order_number: str
+    created_at: datetime
+    cashier_name: str
+    payment_method: PaymentMethod
+    total_amount: Decimal
+    items_count: int
+    notes: Optional[str]
+
+
+class DailySalesReport(BaseModel):
+    date: str  # YYYY-MM-DD
+    total_sales: Decimal
+    cash_sales: Decimal
+    card_sales: Decimal
+    orders_count: int
+    average_ticket: Decimal
+    orders: List[DailyOrderSummary]
+

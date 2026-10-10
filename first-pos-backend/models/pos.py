@@ -90,8 +90,8 @@ class MenuItem(Base):
     category = Column(String(50), nullable=True)  # Comidas, Bebidas, Postres...
     price = Column(Numeric(10, 2), nullable=False)  # Precio de venta al público
 
-    # Clave foránea que conecta la venta con el inventario
-    recipe_id = Column(UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="RESTRICT"), nullable=False, index=True)
+    # Clave foránea que conecta la venta con el inventario (puede ser NULL si la receta se retiró/desvinculó)
+    recipe_id = Column(UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="SET NULL"), nullable=True, index=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

@@ -94,6 +94,30 @@ def list_menu_items_endpoint(
     return service.get_menu_items(db, active_only=active_only)
 
 
+@router.delete(
+    "/menu/{menu_item_id}",
+    summary="Eliminar o retirar un platillo del menú de venta",
+)
+def delete_menu_item_endpoint(
+    menu_item_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Retira un platillo del catálogo del POS."""
+    return service.delete_menu_item(db, menu_item_id)
+
+
+@router.post(
+    "/menu/{menu_item_id}/reactivate",
+    summary="Reactivar un platillo retirado para volver a venderlo en Caja",
+)
+def reactivate_menu_item_endpoint(
+    menu_item_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Reactiva un platillo del menú si tiene una receta válida."""
+    return service.reactivate_menu_item(db, menu_item_id)
+
+
 # ============================================================================
 # 3. ENDPOINTS DE COBRO (CHECKOUT ATÓMICO)
 # ============================================================================
@@ -128,3 +152,29 @@ def list_orders_endpoint(
     db: Session = Depends(get_db)
 ):
     return db.query(Order).order_by(Order.created_at.desc()).limit(limit).all()
+
+
+# ============================================================================
+# 4. REPORTES Y VENTAS POR DÍA
+# ============================================================================
+
+@router.get(
+    "/reports/daily",
+    response_model=schemas.DailySalesReport,
+    summary="Reporte de ventas del día consolidado con KPIs y tickets",
+)
+def get_daily_sales_report_endpoint(
+    date: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna métricas consolidadas del día:
+    - Total de ventas ($)
+    - Ventas en efectivo ($)
+    - Ventas en tarjeta ($)
+    - Total de órdenes cerradas
+    - Ticket promedio ($)
+    - Lista de órdenes del día
+    """
+    return service.get_daily_sales_report(db, target_date_str=date)
+

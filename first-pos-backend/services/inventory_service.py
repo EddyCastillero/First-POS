@@ -104,6 +104,35 @@ def get_ingredient_by_id(db: Session, ingredient_id: UUID) -> Ingredient:
     return ingredient
 
 
+def delete_ingredient(db: Session, ingredient_id: UUID) -> dict:
+    """
+    Elimina un insumo del catálogo.
+    Si está vinculado a alguna receta, bloquea la eliminación para proteger la integridad.
+    Si solo tiene movimientos de prueba en Kardex o mermas, los limpia y borra el insumo.
+    """
+    ingredient = get_ingredient_by_id(db, ingredient_id)
+
+    # 1. Verificar si está en alguna receta
+    in_recipes = db.query(RecipeItem).filter(RecipeItem.ingredient_id == ingredient_id).first()
+    if in_recipes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede eliminar '{ingredient.name}' porque está siendo usado en una receta o subreceta."
+        )
+
+    # 2. Limpiar registros contables de prueba asociados al insumo
+    db.query(StockMovement).filter(StockMovement.ingredient_id == ingredient_id).delete(synchronize_session=False)
+    db.query(WasteLog).filter(WasteLog.ingredient_id == ingredient_id).delete(synchronize_session=False)
+
+    # 3. Eliminar el insumo
+    name = ingredient.name
+    db.delete(ingredient)
+    db.commit()
+
+    return {"message": f"Insumo '{name}' eliminado exitosamente.", "id": str(ingredient_id)}
+
+
+
 # ============================================================================
 # 2. ENTRADA MANUAL DE STOCK (COMPRAS / REPOSICIÓN)
 # ============================================================================
@@ -418,6 +447,54 @@ def produce_subrecipe(db: Session, data: SubrecipeProductionCreate) -> Productio
     db.commit()
     db.refresh(prod_log)
     return prod_log
+
+
+def delete_recipe(db: Session, recipe_id: UUID) -> dict:
+    """
+    Elimina una Receta o Subreceta.
+    - Bloquea si está vinculada a un platillo del menú (MenuItem).
+    - Bloquea si otra subreceta la usa como ingrediente (RecipeItem.subrecipe_id).
+    - Si es seguro borrarla, limpia sus registros asociados y la elimina.
+    """
+    from models.pos import MenuItem
+
+    recipe = db.query(Recipe).filter(Recipe.id == recipe_id).first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Receta no encontrada.")
+
+    # 1. Validar si está en algún platillo de venta ACTIVO en Caja
+    active_menu_item = db.query(MenuItem).filter(MenuItem.recipe_id == recipe_id, MenuItem.is_active == True).first()
+    if active_menu_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede eliminar '{recipe.name}' porque está activa en el menú de venta ('{active_menu_item.name}'). Primero retírala del Catálogo POS."
+        )
+
+    # 2. Si hay platillos INACTIVOS que apuntaban a esta receta, desvincularlos (recipe_id = None)
+    # para que los tickets de venta históricos no se rompan y la receta se pueda eliminar
+    db.query(MenuItem).filter(MenuItem.recipe_id == recipe_id, MenuItem.is_active == False).update(
+        {MenuItem.recipe_id: None}, synchronize_session=False
+    )
+
+    # 3. Validar si otra subreceta la usa como ingrediente
+    used_as_subrecipe = db.query(RecipeItem).filter(RecipeItem.subrecipe_id == recipe_id).first()
+    if used_as_subrecipe:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede eliminar '{recipe.name}' porque es ingrediente dentro de otra receta/subreceta."
+        )
+
+    # 3. Limpiar movimientos y logs asociados a esta subreceta
+    db.query(StockMovement).filter(StockMovement.subrecipe_id == recipe_id).delete(synchronize_session=False)
+    db.query(WasteLog).filter(WasteLog.subrecipe_id == recipe_id).delete(synchronize_session=False)
+    db.query(ProductionLog).filter(ProductionLog.recipe_id == recipe_id).delete(synchronize_session=False)
+
+    name = recipe.name
+    db.delete(recipe)
+    db.commit()
+
+    return {"message": f"Subreceta '{name}' eliminada exitosamente.", "id": str(recipe_id)}
+
 
 
 # ============================================================================

@@ -50,7 +50,13 @@
           🥑 Mermas (Cocina)
         </button>
         <button onclick="switchTab('production')" id="tab-btn-production" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
-          🍲 Mise en Place
+          📖 Recetas / Subrecetas
+        </button>
+        <button onclick="switchTab('menu')" id="tab-btn-menu" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
+          🍔 Catálogo POS
+        </button>
+        <button onclick="switchTab('daily-sales')" id="tab-btn-daily-sales" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
+          📊 Ventas por Día
         </button>
       </div>
     </div>
@@ -243,6 +249,7 @@
                 <th class="px-6 py-3.5">Costo Unitario</th>
                 <th class="px-6 py-3.5">Merma Est.</th>
                 <th class="px-6 py-3.5">Estado</th>
+                <th class="px-6 py-3.5 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody id="inventory-table-body" class="divide-y divide-slate-100">
@@ -372,57 +379,234 @@
     <!-- ============================================================== -->
     <!-- 4. TAB: MISE EN PLACE (PRODUCCIÓN DE SUBRECETAS) -->
     <!-- ============================================================== -->
+    <!-- 4. TAB: RECETAS / SUBRECETAS -->
+    <!-- ============================================================== -->
     <section id="tab-production" class="tab-content hidden">
-      <div class="mb-6">
-        <h2 class="text-xl font-bold text-slate-900">Producción de Cocina (Mise en Place)</h2>
-        <p class="text-sm text-slate-500">Prepara lotes de subrecetas (salsas, aderezos). Se descuentan insumos crudos y entra el producto preparado.</p>
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Catálogo de Recetas y Subrecetas</h2>
+          <p class="text-sm text-slate-500">Administra los platillos que se cobran en el POS y las preparaciones base de cocina</p>
+        </div>
+
+        <!-- SUB-TABS INTERNAS: RECETAS vs SUBRECETAS -->
+        <div class="inline-flex bg-slate-200/80 p-1 rounded-xl space-x-1">
+          <button type="button" onclick="switchRecipeSubView('main-recipes')" id="subtab-btn-main-recipes" class="px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-black shadow-xs">
+            🍽️ Platillos (Recetas Principales)
+          </button>
+          <button type="button" onclick="switchRecipeSubView('subrecipes')" id="subtab-btn-subrecipes" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-black transition">
+            🍲 Subrecetas (Mise en Place)
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- FORMULARIO DE PREPARACIÓN -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 lg:col-span-1">
-          <h3 class="font-bold text-slate-900 text-base mb-4 pb-2 border-b">Preparar Lote</h3>
-          
-          <form onsubmit="handleProduceSubrecipe(event)" class="space-y-4">
+      <!-- VISTA A: PLATILLOS Y RECETAS PRINCIPALES -->
+      <div id="recipe-view-main-recipes" class="space-y-4">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Subreceta:</label>
-              <select id="prod-subrecipe-select" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
-                <!-- Subrecetas -->
-              </select>
+              <h3 class="font-bold text-slate-900 text-base">🍽️ Platillos a la Venta</h3>
+              <p class="text-xs text-slate-500">Recetas maestras configuradas para cobro en Caja</p>
             </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Cantidad a Producir:</label>
-              <input type="number" step="0.001" id="prod-quantity" required placeholder="Ej. 2000" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Notas / Lote:</label>
-              <input type="text" id="prod-notes" placeholder="Ej. Producción para turno matutino" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Cocinero:</label>
-              <input type="text" id="prod-cook" placeholder="Ej. Alex" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
-            </div>
-
-            <button type="submit" class="w-full bg-black hover:bg-neutral-800 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm transition">
-              🍲 Ejecutar Producción
+            <button onclick="openNewRecipeModal('receta')" class="px-3.5 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              + Nueva Receta Principal
             </button>
-          </form>
-        </div>
-
-        <!-- LISTA DE SUBRECETAS Y STOCK EN REFRIGERADOR -->
-        <div class="lg:col-span-2">
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 text-base mb-4 pb-2 border-b">Subrecetas Disponibles</h3>
-            <div id="subrecipes-list" class="space-y-3">
-              <!-- Renderizado de subrecetas -->
-            </div>
+          </div>
+          <div id="main-recipes-list" class="space-y-3">
+            <!-- Renderizado de recetas principales -->
           </div>
         </div>
+      </div>
 
+      <!-- VISTA B: SUBRECETAS (MISE EN PLACE) -->
+      <div id="recipe-view-subrecipes" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- FORMULARIO DE PRODUCCIÓN -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 lg:col-span-1">
+            <h3 class="font-bold text-slate-900 text-base mb-4 pb-2 border-b">Preparar Lote</h3>
+            
+            <form onsubmit="handleProduceSubrecipe(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Subreceta a Preparar:</label>
+                <select id="prod-subrecipe-select" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                  <!-- Subrecetas -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Cantidad a Producir:</label>
+                <input type="number" step="0.001" id="prod-quantity" required placeholder="Ej. 2000" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Notas / Lote:</label>
+                <input type="text" id="prod-notes" placeholder="Ej. Producción turno matutino" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Cocinero:</label>
+                <input type="text" id="prod-cook" placeholder="Ej. Alex" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm">
+              </div>
+
+              <button type="submit" class="w-full bg-black hover:bg-neutral-800 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm transition">
+                🍲 Ejecutar Producción
+              </button>
+            </form>
+          </div>
+
+          <!-- LISTA DE SUBRECETAS -->
+          <div class="lg:col-span-2">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <div class="flex items-center justify-between mb-4 pb-2 border-b">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base">🍲 Subrecetas en Bodega</h3>
+                  <p class="text-xs text-slate-500">Preparaciones base (salsas, aderezos, masas)</p>
+                </div>
+                <button onclick="openNewRecipeModal('subreceta')" class="px-3.5 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                  + Nueva Subreceta
+                </button>
+              </div>
+              <div id="subrecipes-list" class="space-y-3">
+                <!-- Renderizado de subrecetas -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 5. TAB: CATÁLOGO DE MENÚ (POS) -->
+    <!-- ============================================================== -->
+    <section id="tab-menu" class="tab-content hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Catálogo de Productos y Platillos (POS)</h2>
+          <p class="text-sm text-slate-500">Configura los productos que se venden en Caja, sus precios y la receta técnica que descuentan.</p>
+        </div>
+        <button onclick="openNewMenuItemModal()" class="px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+          + Nuevo Platillo al Menú
+        </button>
+      </div>
+
+      <!-- TABLA DEL CATÁLOGO DE MENÚ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+              <tr>
+                <th class="px-6 py-3.5">Platillo de Venta</th>
+                <th class="px-6 py-3.5">Categoría</th>
+                <th class="px-6 py-3.5">Precio de Venta</th>
+                <th class="px-6 py-3.5">Receta de Cocina Vinculada</th>
+                <th class="px-6 py-3.5">Estado en Caja</th>
+                <th class="px-6 py-3.5 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="menu-catalog-table-body" class="divide-y divide-slate-100">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 6. TAB: VENTAS POR DÍA (REPORTES Y KPI) -->
+    <!-- ============================================================== -->
+    <section id="tab-daily-sales" class="tab-content hidden">
+      <!-- ENCABEZADO Y FILTRO DE FECHA -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span>📊</span> Reporte de Ventas por Día
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Auditoría diaria de ingresos, tickets cobrados, desglose por método de pago y ticket promedio.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <label class="text-xs font-semibold text-slate-600">Fecha a consultar:</label>
+          <input type="date" id="daily-sales-date-input" onchange="loadDailySalesReport()" class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-black">
+          <button onclick="setSalesDateToday()" class="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+            Hoy
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS METRICAS CLAVE -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Venta Total</span>
+            <span>💰</span>
+          </div>
+          <div id="kpi-total-sales" class="text-2xl font-black text-slate-900">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-1">Ingresos brutos del día</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Ventas Efectivo</span>
+            <span>💵</span>
+          </div>
+          <div id="kpi-cash-sales" class="text-2xl font-black text-emerald-700">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-1">Caja registradora</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Ventas Tarjeta</span>
+            <span>💳</span>
+          </div>
+          <div id="kpi-card-sales" class="text-2xl font-black text-blue-700">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-1">Terminal bancaria</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Tickets Cobrados</span>
+            <span>🧾</span>
+          </div>
+          <div id="kpi-orders-count" class="text-2xl font-black text-slate-900">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">Órdenes completadas</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs col-span-2 md:col-span-1">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Ticket Promedio</span>
+            <span>🎯</span>
+          </div>
+          <div id="kpi-average-ticket" class="text-2xl font-black text-purple-700">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-1">Consumo por comensal</div>
+        </div>
+      </div>
+
+      <!-- TABLA DETALLADA DE ÓRDENES DEL DÍA -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+            <span>📋</span> Desglose de Órdenes del Día
+          </h3>
+          <span id="daily-orders-badge" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-medium">0 órdenes</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-50/70 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100">
+              <tr>
+                <th class="px-6 py-3.5">Folio</th>
+                <th class="px-6 py-3.5">Hora</th>
+                <th class="px-6 py-3.5">Cajero</th>
+                <th class="px-6 py-3.5">Método de Pago</th>
+                <th class="px-6 py-3.5">Artículos</th>
+                <th class="px-6 py-3.5">Notas / Mesa</th>
+                <th class="px-6 py-3.5 text-right font-bold">Total Cobrado</th>
+              </tr>
+            </thead>
+            <tbody id="daily-orders-table-body" class="divide-y divide-slate-100">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -534,6 +718,104 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA RECETA / SUBRECETA -->
+  <div id="modal-new-recipe" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 my-8 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 id="modal-recipe-title" class="text-lg font-bold text-slate-900">Crear Receta Culinaria</h3>
+        <button type="button" onclick="closeModal('modal-new-recipe')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+      </div>
+
+      <form onsubmit="handleCreateRecipe(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
+        <input type="hidden" id="recipe-modal-type" value="receta">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la Receta / Platillo:</label>
+          <input type="text" id="recipe-name" required placeholder="Ej. Tacos de Barbacoa" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción (Opcional):</label>
+          <textarea id="recipe-desc" rows="2" placeholder="Notas sobre la preparación..." class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Rendimiento Estándar:</label>
+            <input type="number" step="0.001" id="recipe-yield-qty" value="1" required class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Unidad de Rendimiento:</label>
+            <select id="recipe-yield-unit" class="w-full px-3 py-2 border rounded-lg text-sm">
+              <option value="pza">Pieza (pza)</option>
+              <option value="g">Gramos (g)</option>
+              <option value="ml">Mililitros (ml)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- LISTA DINÁMICA DE INGREDIENTES / COMPONENTES -->
+        <div class="pt-2 border-t">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Ingredientes y Componentes</span>
+            <button type="button" onclick="addRecipeItemRow()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2 py-1 rounded transition">
+              + Agregar Insumo
+            </button>
+          </div>
+          <div id="recipe-items-container" class="space-y-2">
+            <!-- Filas dinámicas -->
+          </div>
+        </div>
+
+        <div class="flex space-x-3 pt-4 border-t">
+          <button type="button" onclick="closeModal('modal-new-recipe')" class="w-1/2 py-2 border rounded-lg text-sm font-semibold">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2 bg-black text-white rounded-lg text-sm font-bold shadow-sm">Guardar Receta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO PLATILLO AL MENÚ (CATÁLOGO POS) -->
+  <div id="modal-new-menu-item" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 class="text-lg font-bold text-slate-900">Dar de Alta Platillo en el Menú</h3>
+        <button type="button" onclick="closeModal('modal-new-menu-item')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+      </div>
+
+      <form onsubmit="handleCreateMenuItem(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre Comercial en Caja:</label>
+          <input type="text" id="new-menu-name" required placeholder="Ej. Orden de Chilaquiles Verdes" class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Precio al Público ($):</label>
+            <input type="number" step="0.01" id="new-menu-price" required placeholder="125.00" class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Categoría:</label>
+            <input type="text" id="new-menu-cat" placeholder="Desayunos" class="w-full px-3 py-2 border rounded-lg text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Receta Culinaria Vinculada:</label>
+          <p class="text-[11px] text-slate-500 mb-1">Al venderse en caja, se descontarán los ingredientes de esta receta:</p>
+          <select id="new-menu-recipe-select" required class="w-full px-3 py-2 border rounded-lg text-sm">
+            <!-- Recetas principales -->
+          </select>
+        </div>
+
+        <div class="flex space-x-3 pt-3 border-t">
+          <button type="button" onclick="closeModal('modal-new-menu-item')" class="w-1/2 py-2 border rounded-lg text-sm font-semibold">Cancelar</button>
+          <button type="submit" class="w-1/2 py-2 bg-black text-white rounded-lg text-sm font-bold shadow-sm">Agregar al Menú</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT DE LA APLICACIÓN -->
   <script>
     const API = ''; // Llamadas relativas al mismo origen Nginx
@@ -570,6 +852,33 @@
       if (tabId === 'inventory') loadInventory();
       if (tabId === 'pos') loadMenu();
       if (tabId === 'production') loadRecipes();
+      if (tabId === 'menu') loadMenuCatalog();
+      if (tabId === 'daily-sales') {
+        initDailySalesDate();
+        loadDailySalesReport();
+      }
+    }
+
+    // Sub-pestañas internas de Recetas vs Subrecetas
+    function switchRecipeSubView(subView) {
+      const mainView = document.getElementById('recipe-view-main-recipes');
+      const subViewEl = document.getElementById('recipe-view-subrecipes');
+      const btnMain = document.getElementById('subtab-btn-main-recipes');
+      const btnSub = document.getElementById('subtab-btn-subrecipes');
+
+      if (subView === 'main-recipes') {
+        mainView.classList.remove('hidden');
+        subViewEl.classList.add('hidden');
+
+        btnMain.className = "px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-black shadow-xs";
+        btnSub.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-black transition";
+      } else {
+        mainView.classList.add('hidden');
+        subViewEl.classList.remove('hidden');
+
+        btnSub.className = "px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-black shadow-xs";
+        btnMain.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-black transition";
+      }
     }
 
     // Toasts
@@ -709,6 +1018,135 @@
         });
       } catch (err) {
         console.error(err);
+      }
+    }
+
+    // ==========================================
+    // ADMINISTRACIÓN DEL CATÁLOGO DE MENÚ (POS)
+    // ==========================================
+    async function loadMenuCatalog() {
+      try {
+        const [resMenu, resRecipes] = await Promise.all([
+          fetch(`${API}/pos/menu?active_only=false`),
+          fetch(`${API}/inventory/recipes`)
+        ]);
+        menuItems = await resMenu.json();
+        recipes = await resRecipes.json();
+
+        const tbody = document.getElementById('menu-catalog-table-body');
+        tbody.innerHTML = '';
+
+        if (menuItems.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">No hay productos en el menú del POS.</td></tr>';
+          return;
+        }
+
+        menuItems.forEach(item => {
+          const recipe = recipes.find(r => r.id === item.recipe_id);
+          const recipeName = recipe ? recipe.name : (item.recipe_id ? 'Receta no encontrada' : 'Sin receta (Desvinculada)');
+          const statusBadge = item.is_active 
+            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Activo en Caja</span>'
+            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">⚪ Retirado de Caja</span>';
+
+          const actionBtn = item.is_active
+            ? `<button onclick="handleDeleteMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Retirar platillo del menú">🗑️ Retirar</button>`
+            : `<button onclick="handleReactivateMenuItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition" title="Reactivar en caja">♻️ Reactivar</button>`;
+
+          const tr = document.createElement('tr');
+          tr.className = item.is_active ? "hover:bg-slate-50 transition" : "hover:bg-slate-50 opacity-60 transition";
+          tr.innerHTML = `
+            <td class="px-6 py-3.5 font-bold text-slate-900">${item.name}</td>
+            <td class="px-6 py-3.5 text-slate-500">${item.category || '-'}</td>
+            <td class="px-6 py-3.5 font-extrabold text-slate-900">$${parseFloat(item.price).toFixed(2)}</td>
+            <td class="px-6 py-3.5">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-neutral-100 text-neutral-800 border border-neutral-200">
+                🍳 ${recipeName}
+              </span>
+            </td>
+            <td class="px-6 py-3.5">${statusBadge}</td>
+            <td class="px-6 py-3.5 text-center">${actionBtn}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error cargando catálogo de menú:', err);
+      }
+    }
+
+    function openNewMenuItemModal() {
+      // Poblar el selector con las recetas registradas
+      const select = document.getElementById('new-menu-recipe-select');
+      select.innerHTML = '<option value="">-- Selecciona una Receta --</option>';
+
+      recipes.forEach(r => {
+        const typeBadge = r.recipe_type === 'receta' ? '[Platillo]' : '[Subreceta]';
+        select.innerHTML += `<option value="${r.id}">${typeBadge} ${r.name} (Rinde: ${parseFloat(r.yield_quantity)} ${r.yield_unit})</option>`;
+      });
+
+      document.getElementById('modal-new-menu-item').classList.remove('hidden');
+    }
+
+    async function handleCreateMenuItem(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('new-menu-name').value.trim(),
+        price: parseFloat(document.getElementById('new-menu-price').value),
+        category: document.getElementById('new-menu-cat').value.trim() || null,
+        recipe_id: document.getElementById('new-menu-recipe-select').value
+      };
+
+      try {
+        const res = await fetch(`${API}/pos/menu`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error dando de alta platillo');
+
+        showToast(`Platillo "${data.name}" agregado al menú`);
+        closeModal('modal-new-menu-item');
+        e.target.reset();
+        await loadMenuCatalog();
+        await loadMenu();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function handleDeleteMenuItem(id, name) {
+      if (!confirm(`¿Estás seguro de que deseas retirar "${name}" del menú de venta?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/pos/menu/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al eliminar platillo');
+
+        showToast(data.message || 'Platillo retirado con éxito');
+        await loadMenuCatalog();
+        await loadMenu();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function handleReactivateMenuItem(id, name) {
+      try {
+        const res = await fetch(`${API}/pos/menu/${id}/reactivate`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al reactivar platillo');
+
+        showToast(data.message || `Platillo "${name}" reactivado en Caja`);
+        await loadMenuCatalog();
+        await loadMenu();
+      } catch (err) {
+        showToast(err.message, true);
       }
     }
 
@@ -885,11 +1323,35 @@
             <td class="px-6 py-3 text-slate-600">${ing.cost_per_unit ? `$${parseFloat(ing.cost_per_unit).toFixed(2)}` : '-'}</td>
             <td class="px-6 py-3 text-slate-500">${parseFloat(ing.waste_percentage).toFixed(1)}%</td>
             <td class="px-6 py-3">${badge}</td>
+            <td class="px-6 py-3 text-center">
+              <button onclick="handleDeleteIngredient('${ing.id}', '${ing.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Eliminar insumo">
+                🗑️
+              </button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
         console.error(err);
+      }
+    }
+
+    async function handleDeleteIngredient(id, name) {
+      if (!confirm(`¿Estás seguro de que deseas eliminar el insumo "${name}"?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/inventory/ingredients/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al eliminar insumo');
+
+        showToast(data.message || 'Insumo eliminado con éxito');
+        await loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
       }
     }
 
@@ -1022,19 +1484,20 @@
     }
 
     // ==========================================
-    // 5. MISE EN PLACE (PRODUCCIÓN)
+    // 5. RECETAS Y MISE EN PLACE (PRODUCCIÓN)
     // ==========================================
     async function loadRecipes() {
       try {
         const res = await fetch(`${API}/inventory/recipes`);
         recipes = await res.json();
         
+        // 1. Renderizar Subrecetas
         const subrecipes = recipes.filter(r => r.recipe_type === 'subreceta');
         const select = document.getElementById('prod-subrecipe-select');
         select.innerHTML = '<option value="">-- Selecciona Subreceta --</option>';
 
-        const listContainer = document.getElementById('subrecipes-list');
-        listContainer.innerHTML = '';
+        const subListContainer = document.getElementById('subrecipes-list');
+        subListContainer.innerHTML = subrecipes.length ? '' : '<p class="text-xs text-slate-400 italic">No hay subrecetas registradas.</p>';
 
         subrecipes.forEach(r => {
           select.innerHTML += `<option value="${r.id}">${r.name} (Rinde: ${parseFloat(r.yield_quantity)} ${r.yield_unit})</option>`;
@@ -1044,14 +1507,157 @@
           card.innerHTML = `
             <div>
               <h4 class="font-bold text-slate-800 text-sm">${r.name}</h4>
-              <p class="text-xs text-slate-500">Rendimiento estándar: ${parseFloat(r.yield_quantity)} ${r.yield_unit}</p>
+              <p class="text-xs text-slate-500">Rendimiento estándar: ${parseFloat(r.yield_quantity)} ${r.yield_unit} • ${r.items ? r.items.length : 0} ingredientes</p>
             </div>
-            <span class="text-xs font-semibold px-2.5 py-1 rounded bg-neutral-200 text-black">Mise en place</span>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold px-2.5 py-1 rounded bg-neutral-200 text-black">Mise en place</span>
+              <button onclick="handleDeleteRecipe('${r.id}', '${r.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-100/60 p-1.5 rounded-lg transition" title="Eliminar subreceta">
+                🗑️
+              </button>
+            </div>
           `;
-          listContainer.appendChild(card);
+          subListContainer.appendChild(card);
         });
+
+        // 2. Renderizar Recetas Principales del Menú
+        const mainRecipes = recipes.filter(r => r.recipe_type === 'receta');
+        const mainListContainer = document.getElementById('main-recipes-list');
+        mainListContainer.innerHTML = mainRecipes.length ? '' : '<p class="text-xs text-slate-400 italic">No hay recetas principales registradas.</p>';
+
+        mainRecipes.forEach(r => {
+          const card = document.createElement('div');
+          card.className = "p-4 rounded-xl border border-slate-100 bg-white hover:border-slate-300 transition shadow-xs flex items-center justify-between";
+          card.innerHTML = `
+            <div>
+              <h4 class="font-bold text-slate-900 text-sm">${r.name}</h4>
+              <p class="text-xs text-slate-500">Porción de venta: ${parseFloat(r.yield_quantity)} ${r.yield_unit} • ${r.items ? r.items.length : 0} componentes</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-100 text-emerald-800">🍽️ Platillo Menú</span>
+              <button onclick="handleDeleteRecipe('${r.id}', '${r.name.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-100/60 p-1.5 rounded-lg transition" title="Eliminar receta">
+                🗑️
+              </button>
+            </div>
+          `;
+          mainListContainer.appendChild(card);
+        });
+
       } catch (err) {
         console.error(err);
+      }
+    }
+
+    function openNewRecipeModal(type = 'receta') {
+      document.getElementById('recipe-modal-type').value = type;
+      document.getElementById('modal-recipe-title').innerText = type === 'receta' ? 'Crear Receta de Platillo Principal' : 'Crear Subreceta (Mise en Place)';
+      document.getElementById('recipe-items-container').innerHTML = '';
+      addRecipeItemRow(); // Fila inicial
+      document.getElementById('modal-new-recipe').classList.remove('hidden');
+    }
+
+    function addRecipeItemRow() {
+      const container = document.getElementById('recipe-items-container');
+      const rowId = 'row-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+      
+      let options = '<optgroup label="Insumos Crudos">';
+      ingredients.forEach(i => {
+        options += `<option value="ing:${i.id}">${i.name} (${i.unit})</option>`;
+      });
+      options += '</optgroup>';
+
+      const subrecipes = recipes.filter(r => r.recipe_type === 'subreceta');
+      if (subrecipes.length) {
+        options += '<optgroup label="Subrecetas (Mise en place)">';
+        subrecipes.forEach(s => {
+          options += `<option value="sub:${s.id}">${s.name} (${s.yield_unit})</option>`;
+        });
+        options += '</optgroup>';
+      }
+
+      const row = document.createElement('div');
+      row.id = rowId;
+      row.className = "flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 text-xs";
+      row.innerHTML = `
+        <select class="item-target flex-1 px-2 py-1.5 border rounded bg-white text-xs" required>
+          ${options}
+        </select>
+        <input type="number" step="0.001" placeholder="Cant." class="item-qty w-20 px-2 py-1.5 border rounded bg-white text-xs" required>
+        <select class="item-unit w-20 px-2 py-1.5 border rounded bg-white text-xs">
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+          <option value="pza">pza</option>
+        </select>
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-500 hover:text-rose-700 px-1 font-bold text-sm">&times;</button>
+      `;
+      container.appendChild(row);
+    }
+
+    async function handleCreateRecipe(e) {
+      e.preventDefault();
+      const type = document.getElementById('recipe-modal-type').value;
+      const name = document.getElementById('recipe-name').value;
+      const description = document.getElementById('recipe-desc').value || null;
+      const yield_quantity = parseFloat(document.getElementById('recipe-yield-qty').value);
+      const yield_unit = document.getElementById('recipe-yield-unit').value;
+
+      const itemRows = document.querySelectorAll('#recipe-items-container > div');
+      const items = [];
+
+      itemRows.forEach(row => {
+        const targetVal = row.querySelector('.item-target').value;
+        const quantity = parseFloat(row.querySelector('.item-qty').value);
+        const unit = row.querySelector('.item-unit').value;
+
+        if (targetVal.startsWith('ing:')) {
+          items.push({ ingredient_id: targetVal.replace('ing:', ''), quantity, unit });
+        } else if (targetVal.startsWith('sub:')) {
+          items.push({ subrecipe_id: targetVal.replace('sub:', ''), quantity, unit });
+        }
+      });
+
+      const payload = {
+        name,
+        recipe_type: type,
+        description,
+        yield_quantity,
+        yield_unit,
+        items
+      };
+
+      try {
+        const res = await fetch(`${API}/inventory/recipes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al guardar receta');
+
+        showToast(`¡Receta "${data.name}" creada con éxito!`);
+        closeModal('modal-new-recipe');
+        e.target.reset();
+        await loadRecipes();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function handleDeleteRecipe(id, name) {
+      if (!confirm(`¿Estás seguro de que deseas eliminar la subreceta "${name}"?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/inventory/recipes/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al eliminar subreceta');
+
+        showToast(data.message || 'Subreceta eliminada con éxito');
+        await loadRecipes();
+      } catch (err) {
+        showToast(err.message, true);
       }
     }
 
@@ -1076,6 +1682,92 @@
         showToast(`¡Lote de ${data.quantity_produced} ${data.unit} producido y almacenado!`);
         e.target.reset();
         loadInventory();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // ==========================================
+    // 7. GESTIÓN Y REPORTE DE VENTAS POR DÍA
+    // ==========================================
+    function getTodayString() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function initDailySalesDate() {
+      const dateInput = document.getElementById('daily-sales-date-input');
+      if (!dateInput.value) {
+        dateInput.value = getTodayString();
+      }
+    }
+
+    function setSalesDateToday() {
+      const dateInput = document.getElementById('daily-sales-date-input');
+      dateInput.value = getTodayString();
+      loadDailySalesReport();
+    }
+
+    async function loadDailySalesReport() {
+      initDailySalesDate();
+      const dateInput = document.getElementById('daily-sales-date-input');
+      const selectedDate = dateInput.value;
+
+      try {
+        const res = await fetch(`${API}/pos/reports/daily?date=${selectedDate}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error cargando ventas del día');
+
+        // Renderizar KPI Cards
+        document.getElementById('kpi-total-sales').innerText = `$${parseFloat(data.total_sales).toFixed(2)}`;
+        document.getElementById('kpi-cash-sales').innerText = `$${parseFloat(data.cash_sales).toFixed(2)}`;
+        document.getElementById('kpi-card-sales').innerText = `$${parseFloat(data.card_sales).toFixed(2)}`;
+        document.getElementById('kpi-orders-count').innerText = data.orders_count;
+        document.getElementById('kpi-average-ticket').innerText = `$${parseFloat(data.average_ticket).toFixed(2)}`;
+
+        // Badge y Tabla
+        document.getElementById('daily-orders-badge').innerText = `${data.orders_count} ${data.orders_count === 1 ? 'orden' : 'órdenes'}`;
+
+        const tbody = document.getElementById('daily-orders-table-body');
+        tbody.innerHTML = '';
+
+        if (!data.orders || data.orders.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-6 py-8 text-center text-slate-400 italic">
+                No hay órdenes registradas para la fecha seleccionada (${selectedDate}).
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        data.orders.forEach(order => {
+          const dateObj = new Date(order.created_at);
+          const timeFormatted = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          const isCash = order.payment_method === 'CASH';
+          const methodBadge = isCash
+            ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">💵 Efectivo</span>`
+            : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">💳 Tarjeta</span>`;
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition";
+          tr.innerHTML = `
+            <td class="px-6 py-4 font-mono font-bold text-slate-900">${order.order_number}</td>
+            <td class="px-6 py-4 text-slate-500">${timeFormatted}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">${order.cashier_name}</td>
+            <td class="px-6 py-4">${methodBadge}</td>
+            <td class="px-6 py-4 text-slate-600 font-semibold">${order.items_count} ${order.items_count === 1 ? 'artículo' : 'artículos'}</td>
+            <td class="px-6 py-4 text-slate-400 italic">${order.notes || '—'}</td>
+            <td class="px-6 py-4 text-right font-black text-slate-900 text-sm">$${parseFloat(order.total_amount).toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
       } catch (err) {
         showToast(err.message, true);
       }

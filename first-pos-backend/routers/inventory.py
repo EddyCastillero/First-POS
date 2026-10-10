@@ -58,6 +58,20 @@ def get_ingredient_endpoint(
     return service.get_ingredient_by_id(db, ingredient_id)
 
 
+@router.delete(
+    "/ingredients/{ingredient_id}",
+    summary="Eliminar un insumo del catálogo",
+)
+def delete_ingredient_endpoint(
+    ingredient_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Elimina un insumo y sus registros de prueba siempre que no pertenezca a una receta activa.
+    """
+    return service.delete_ingredient(db, ingredient_id)
+
+
 # ============================================================================
 # 2. ENTRADA MANUAL DE STOCK (COMPRAS / REPOSICIÓN)
 # ============================================================================
@@ -152,6 +166,20 @@ def list_recipes_endpoint(
 ):
     """Lista las recetas activas del sistema."""
     return service.get_recipes(db, recipe_type=recipe_type)
+
+
+@router.delete(
+    "/recipes/{recipe_id}",
+    summary="Eliminar una receta o subreceta",
+)
+def delete_recipe_endpoint(
+    recipe_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Elimina una receta/subreceta si no está ligada a un platillo de venta u otra subreceta.
+    """
+    return service.delete_recipe(db, recipe_id)
 
 
 @router.post(
